@@ -1,0 +1,102 @@
+version: '3'
+
+services:
+  traefik:
+    image: traefik:v2.2.11
+    container_name: traefik
+    networks:
+      - traefik-internetwork
+    ports:
+      - 80:80
+      - 443:443
+      - 8088:8088
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
+      
+      - --entryPoints.console.address=:8088
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entryPoints.web.http.redirections.entryPoint.to=websecure
+      - --entryPoints.web.http.redirections.entryPoint.scheme=https
+      - --entryPoints.web.http.redirections.entrypoint.permanent=true
+      
+      - --api=true
+      - --api.insecure=true
+      - --global.checkNewVersion=true
+      - --log.level=DEBUG
+      - --log.filePath=/logs/traefik.log
+      - --accessLog.filePath=/logs/access.log
+      - --accessLog.bufferingSize=100
+      
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+      - --certificatesresolvers.letsencrypt.acme.email=${CF_API_EMAIL}  # replace with your email
+      - --certificatesresolvers.letsencrypt.acme.storage=acme/acme.json
+      - --certificatesresolvers.letsencrypt.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+    labels:
+      - traefik.enable=true
+      - traefik.http.middlewares.admin.basicauth.users=$TRAEFIK_USER:$TRAEFIK_PASSWORD
+      
+      - traefik.http.routers.thisproxylocal.rule=Host(`152.69.211.33`)
+      - traefik.http.routers.thisproxylocal.entryPoints=console
+      - traefik.http.routers.thisproxylocal.service=api@internal
+      - traefik.http.routers.thisproxylocal.middlewares=admin
+      
+      - traefik.http.services.thisproxytls.loadbalancer.server.port=8088
+      - traefik.http.routers.thisproxytls.rule=Host(`traefik.gxcaothai.net`) || Host(`traefik.mcbourdeux-workstation.com`)
+      - traefik.http.routers.thisproxytls.entrypoints=websecure
+      - traefik.http.routers.thisproxytls.service=api@internal
+      - traefik.http.routers.thisproxytls.middlewares=admin
+      - traefik.http.routers.thisproxytls.tls.certresolver=letsencrypt
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /datacenter/docker/traefik/acme:/acme
+      - /datacenter/docker/traefik/logs:/logs
+    environment:
+      - CF_API_EMAIL=$CF_API_EMAIL
+      - CF_API_KEY=$CF_API_KEY
+    restart: always
+    
+  whoami:
+    image: "traefik/whoami"
+    container_name: "simple-service"
+    restart: unless-stopped
+    networks:
+      - traefik-internetwork
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-internetwork
+      - traefik.http.routers.whoami.rule=Host(`test.gxcaothai.net`)  
+      - traefik.http.routers.whoami.entrypoints=websecure
+      - traefik.http.routers.whoami.tls.certresolver=letsencrypt
+      
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: unless-stopped
+    networks:
+      - traefik-internetwork
+      - postgres-infra
+    volumes:
+      - /datacenter/docker/pgadmin:/var/lib/pgadmin
+      - /datacenter/docker/pgadmin/servers.json:/pgadmin4/servers.json
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=$CF_API_EMAIL
+      - PGADMIN_DEFAULT_PASSWORD=Master21091996
+      - SCRIPT_NAME=/pgadmin4
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-internetwork
+      - traefik.http.routers.pgadmin.rule=Host(`pgadmin.mcbourdeux-workstation.com`) && PathPrefix(`/pgadmin4`)
+      - traefik.http.routers.pgadmin.entrypoints=websecure
+      - traefik.http.routers.pgadmin.tls.certresolver=letsencrypt
+
+      
+networks:
+  traefik-internetwork:
+    external: true
+  postgres-infra:
+    external: true

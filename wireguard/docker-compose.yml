@@ -1,0 +1,69 @@
+version: '3.8'
+
+networks:
+  traefik-internetwork:
+    external: true
+  wg-easy:
+    name: wg-easy
+    external: true
+    ipam:
+      config:
+        - subnet: 10.8.1.0/24
+
+services:
+  pihole:
+    image: pihole/pihole
+    container_name: pihole
+    environment:
+      - WEBPASSWORD=Master21091996
+    volumes:
+      - /datacenter/docker/pihole/etc-pihole:/etc/pihole
+      - /datacenter/docker/pihole/etc-dnsmasq.d:/etc/dnsmasq.d
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "5353:80/tcp"
+    restart: unless-stopped
+    networks:
+      wg-easy:
+        ipv4_address: 10.8.1.3
+  
+  wireguard:
+    depends_on:
+      - pihole
+    image: weejewel/wg-easy:latest
+    container_name: wireguard
+    restart: unless-stopped
+    environment:
+      WG_HOST: '152.69.211.33'
+      PASSWORD: $ROOT_PASSWORD
+      WG_DEFAULT_DNS: 1.1.1.1,1.0.0.1
+
+    volumes:
+      - /datacenter/docker/wireguard:/etc/wireguard
+    ports:
+      - 51821:51821/tcp
+      - 51820:51820/udp
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+    networks:
+      traefik-internetwork:
+      wg-easy:
+        ipv4_address: 10.8.1.2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-internetwork"
+      - "traefik.http.routers.wireguard-http.entrypoints=web"
+      - "traefik.http.routers.wireguard-http.rule=Host(`wireguard.mcbourdeux-workstation.com`)"
+      - "traefik.http.routers.wireguard-http.middlewares=wireguard-https"
+      - "traefik.http.routers.wireguard-http.service=wireguard"
+      - "traefik.http.services.wireguard.loadbalancer.server.port=51821"
+      - "traefik.http.middlewares.wireguard-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.wireguard.entrypoints=websecure"
+      - "traefik.http.routers.wireguard.rule=Host(`wireguard.mcbourdeux-workstation.com`)"
+      - "traefik.http.routers.wireguard.tls=true"
+      - "traefik.http.routers.wireguard.tls.certresolver=letsencrypt"

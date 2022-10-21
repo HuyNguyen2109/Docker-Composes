@@ -1,0 +1,88 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:14.5
+    container_name: nextcloud-db
+    hostname: postgres
+    networks:
+      - postgres-infra
+    environment:
+      - PUID=$PUID
+      - PGID=$PGID
+      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - /datacenter/docker/postgres:/var/lib/postgresql/data
+    restart: always
+  
+  cache:
+    image: redis:alpine
+    container_name: nextcloud-cache
+    networks:
+      - redis-infra
+    hostname: redis
+    restart: always
+    command: redis-server --save 20 1 --loglevel warning
+    volumes: 
+      - /datacenter/docker/redis:/data
+
+  app:
+    image: nextcloud:latest
+    container_name: nextcloud-app
+    hostname: nextcloud-app
+    user: 0:0
+    networks:
+      - postgres-infra
+      - redis-infra
+      - traefik-internetwork
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=$TZ
+      - POSTGRES_DB=$POSTGRES_DB
+      - POSTGRES_USER=$POSTGRES_ROOT_USER
+      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+      - POSTGRES_HOST=postgres:5432
+      - REDIS_HOST=redis
+      - REDIS_HOST_PORT=6379
+      - PHP_MEMORY_LIMIT=4G
+      - PHP_UPLOAD_LIMIT=15G
+    volumes:
+      - /datacenter/docker/nextcloud:/var/www/html:rw
+      - /Ext-Onedrive:/mnt/onedrive-personal:rw
+      - /datacenter/temp/nextcloud:/mnt/tmp:rw
+      - /datacenter/docker/zzz-uploadTempDirectory.ini:/usr/local/etc/php/conf.d/zzz-uploadFileSize.ini:ro
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-internetwork
+      - traefik.http.routers.nextcloud-app.rule=Host(`altt-cloud.gxcaothai.net`)
+      - traefik.http.routers.nextcloud-app.entrypoints=websecure
+      - traefik.http.routers.nextcloud-app.tls.certresolver=letsencrypt
+
+    depends_on:
+      - db
+      - cache
+  
+  cron:
+    image: nextcloud:latest
+    container_name: nextcloud-cron
+    networks:
+      - postgres-infra
+      - redis-infra
+    restart: always
+    entrypoint: /cron.sh
+    volumes:
+      - /datacenter/docker/nextcloud:/var/www/html
+    depends_on:
+      - db
+      - cache
+      
+networks:
+  traefik-internetwork:
+    external: true
+  redis-infra:
+    external: true
+  postgres-infra:
+    external: true

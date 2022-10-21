@@ -1,0 +1,51 @@
+version: "3"
+
+services:
+  onlyoffice:
+    image: onlyoffice/documentserver:latest-arm64
+    container_name: onlyoffice
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+    networks:
+      - traefik-internetwork
+      - postgres-infra
+    volumes:
+      - /datacenter/docker/onlyoffice/data:/var/www/onlyoffice/Data
+      - /datacenter/docker/onlyoffice/logs:/var/log/onlyoffice
+      - /datacenter/docker/onlyoffice//lib:/var/lib/onlyoffice
+      - /datacenter/docker/onlyoffice/db:/var/lib/postgresql
+    environment:
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=onlyofficedb
+      - DB_USER=onlyoffice
+      - DB_PWD=Master21091996
+      - REDIS_SERVER_HOST=redis
+      - REDIS_SERVER_PORT=6379
+      - JWT_ENABLED=false
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-internetwork"
+      - "traefik.http.routers.${HOSTNAME}-http.entrypoints=web"
+      - "traefik.http.routers.${HOSTNAME}-http.rule=Host(`${HOSTNAME}.${DOMAIN0}`)"
+      - "traefik.http.routers.${HOSTNAME}-http.middlewares=${HOSTNAME}-https"
+      - "traefik.http.routers.${HOSTNAME}-https.entrypoints=websecure"
+      - "traefik.http.routers.${HOSTNAME}-https.rule=Host(`${HOSTNAME}.${DOMAIN0}`)"
+      - "traefik.http.routers.${HOSTNAME}-https.tls=true"
+      - "traefik.http.routers.${HOSTNAME}-https.middlewares=onlyoffice-headers"
+      - "traefik.http.services.${HOSTNAME}.loadbalancer.server.port=80"
+
+      ## Middleware definition
+      # Headers for onlyoffice, https://github.com/ONLYOFFICE/onlyoffice-nextcloud/issues/151
+      - "traefik.http.middlewares.onlyoffice-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.onlyoffice-headers.headers.accessControlAllowOrigin=*"
+      
+networks:
+  traefik-internetwork:
+    external: true
+  postgres-infra:
+    external: true
