@@ -96,6 +96,8 @@ services:
     links:
       - "netmaker:api"
     restart: always
+    networks:
+      - traefik-internetwork
     environment:
       BACKEND_URL: "https://api-netmaker.${NETMAKER_BASE_DOMAIN}" # URL where UI will send API requests. Change based on SERVER_HOST, SERVER_HTTP_HOST, and API_PORT
     labels:
