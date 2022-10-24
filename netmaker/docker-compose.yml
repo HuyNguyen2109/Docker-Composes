@@ -3,7 +3,7 @@ version: "3.4"
 services:
   mq:
     container_name: mq
-    image: eclipse-mosquitto:2.0.11-openssl
+    image: eclipse-mosquitto:openssl
     restart: unless-stopped
     volumes:
       - /datacenter/docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf # need to pull conf file from github before running (under docker/mosquitto.conf)
@@ -27,7 +27,7 @@ services:
     depends_on:
       - mq
     container_name: netmaker
-    image: gravitl/netmaker:v0.15.1
+    image: gravitl/netmaker:latest
     cap_add: 
       - NET_ADMIN
       - NET_RAW
@@ -89,7 +89,7 @@ services:
 
   netmaker-ui:  # The Netmaker UI Component
     container_name: netmaker-ui
-    image: gravitl/netmaker-ui:v0.15.1
+    image: gravitl/netmaker-ui:latest
     depends_on:
       - netmaker
       - mq
