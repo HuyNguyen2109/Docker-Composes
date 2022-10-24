@@ -29,8 +29,8 @@ services:
   netmaker: # The Primary Server for running Netmaker
     depends_on:
       - mq
-    container_name: netmaker:v0.14.1
-    image: gravitl/netmaker:latest
+    container_name: netmaker
+    image: gravitl/netmaker:v0.14.1
     cap_add: 
       - NET_ADMIN
       - NET_RAW
