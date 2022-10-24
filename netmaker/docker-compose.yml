@@ -19,6 +19,7 @@ services:
       - traefik-internetwork
     labels:
       - traefik.enable=true
+      - traefik.docker.network=traefik-internetwork
       - traefik.tcp.routers.mqtts.rule=HostSNI(`broker.NETMAKER_BASE_DOMAIN`)
       - traefik.tcp.routers.mqtts.tls.passthrough=true
       - traefik.tcp.services.mqtts-svc.loadbalancer.server.port=8883
