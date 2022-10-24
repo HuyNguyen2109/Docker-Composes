@@ -81,7 +81,7 @@ services:
 
     labels: # only for use with traefik proxy (default)
       - traefik.enable=true
-      - traefik,docker.network=traefik-internetwork
+      - traefik.docker.network=traefik-internetwork
       - traefik.http.routers.netmaker-api.entrypoints=websecure
       - traefik.http.routers.netmaker-api.tls.certresolver=letsencrypt
       - traefik.http.routers.netmaker-api.rule=Host(`api-netmaker.${NETMAKER_BASE_DOMAIN}`)
