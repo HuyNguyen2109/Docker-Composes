@@ -119,3 +119,4 @@ networks:
   traefik-internetwork:
     external: true
   postgres-infra:
+    external: true
