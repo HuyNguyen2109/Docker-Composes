@@ -22,6 +22,7 @@ services:
       - traefik.tcp.services.mqtts-svc.loadbalancer.server.port=8883
       - traefik.tcp.routers.mqtts.service=mqtts-svc
       - traefik.tcp.routers.mqtts.entrypoints=websecure
+      - traefik.tcp.routers.mqtts.certresolver=letsencrypt
 
   netmaker: # The Primary Server for running Netmaker
     depends_on:
@@ -83,6 +84,7 @@ services:
       - traefik.enable=true
       - traefik,docker.network=traefik-internetwork
       - traefik.http.routers.netmaker-api.entrypoints=websecure
+      - traefik.http.routers.netmaker-api.certresolver=letsencrypt
       - traefik.http.routers.netmaker-api.rule=Host(`api-netmaker.${NETMAKER_BASE_DOMAIN}`)
       - traefik.http.routers.netmaker-api.service=netmaker-api
       - traefik.http.services.netmaker-api.loadbalancer.server.port=8081
@@ -110,6 +112,7 @@ services:
       - traefik.http.middlewares.nmui-security.headers.customResponseHeaders.X-Robots-Tag=none
       - traefik.http.middlewares.nmui-security.headers.customResponseHeaders.Server= # Remove the server name
       - traefik.http.routers.netmaker-ui.entrypoints=websecure
+      - traefik.http.routers.netmaker-ui.certresolver=letsencrypt
       - traefik.http.routers.netmaker-ui.middlewares=nmui-security@docker
       - traefik.http.routers.netmaker-ui.rule=Host(`netmaker.${NETMAKER_BASE_DOMAIN}`)
       - traefik.http.routers.netmaker-ui.service=netmaker-ui
