@@ -11,8 +11,9 @@ services:
       - /datacenter/docker/mosquitto/data:/mosquitto/data
       - /datacenter/docker/mosquitto/log:/mosquitto/log
       - /datacenter/docker/mosquitto/certs:/mosquitto/certs
-    expose:
-      - "8883"
+    ports:
+      - "127.0.0.1:1883:1883"
+      - "8883:8883"
     networks:
       - traefik-internetwork
     labels:
@@ -28,7 +29,7 @@ services:
   netmaker: # The Primary Server for running Netmaker
     depends_on:
       - mq
-    container_name: netmaker
+    container_name: netmaker:v0.14.1
     image: gravitl/netmaker:latest
     cap_add: 
       - NET_ADMIN
@@ -71,7 +72,7 @@ services:
       SQL_PASS: "${NETMAKER_USER_PASSWORD}"
       NODE_ID: "netmaker-server" # used for HA - identifies this server vs other servers
       MQ_HOST: "mq"  # the address of the mq server. If running from docker compose it will be "mq". Otherwise, need to input address. If using "host networking", it will find and detect the IP of the mq container.
-      MQ_SERVER_PORT: "8883" # the reachable port of MQ by the server - change if internal MQ port changes (or use external port if MQ is not on the same machine)
+      MQ_SERVER_PORT: "1883" # the reachable port of MQ by the server - change if internal MQ port changes (or use external port if MQ is not on the same machine)
       MQ_ADMIN_PASSWORD: "Master21091996"
       MQ_PORT: "443" # the reachable port of MQ - change if external MQ port changes (port on proxy, not necessarily the one exposed in docker-compose)
       HOST_NETWORK: "off" # whether or not host networking is turned on. Only turn on if configured for host networking (see docker-compose.hostnetwork.yml). Will set host-level settings like iptables.
@@ -92,7 +93,7 @@ services:
 
   netmaker-ui:  # The Netmaker UI Component
     container_name: netmaker-ui
-    image: gravitl/netmaker-ui:latest
+    image: gravitl/netmaker-ui:v0.14.1
     depends_on:
       - netmaker
       - mq
