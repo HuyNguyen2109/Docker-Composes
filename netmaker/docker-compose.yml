@@ -52,7 +52,7 @@ services:
       SERVER_HTTP_HOST: "api-netmaker.${NETMAKER_BASE_DOMAIN}" # Overrides SERVER_HOST if set. Useful for making HTTP available via different interfaces/networks.
       SERVER_API_CONN_STRING: "api-netmaker.${NETMAKER_BASE_DOMAIN}:443"
       COREDNS_ADDR: "152.69.211.33" # Address of the CoreDNS server. Defaults to SERVER_HOST
-      DNS_MODE: "off" # Enables DNS Mode, meaning all nodes will set hosts file for private dns settings.
+      DNS_MODE: "on" # Enables DNS Mode, meaning all nodes will set hosts file for private dns settings.
       API_PORT: "8081" # The HTTP API port for Netmaker. Used for API calls / communication from front end. If changed, need to change port of BACKEND_URL for netmaker-ui.
       CLIENT_MODE: "on" # Depricated. CLIENT_MODE should always be ON
       REST_BACKEND: "on" # Enables the REST backend (API running on API_PORT at SERVER_HTTP_HOST). Change to "off" to turn off.
@@ -70,12 +70,13 @@ services:
       SQL_PASS: "${NETMAKER_USER_PASSWORD}"
       NODE_ID: "netmaker-server" # used for HA - identifies this server vs other servers
       MQ_HOST: "mq"  # the address of the mq server. If running from docker compose it will be "mq". Otherwise, need to input address. If using "host networking", it will find and detect the IP of the mq container.
-      MQ_SERVER_PORT: "8883" # the reachable port of MQ by the server - change if internal MQ port changes (or use external port if MQ is not on the same machine)
+      MQ_SERVER_PORT: "1883" # the reachable port of MQ by the server - change if internal MQ port changes (or use external port if MQ is not on the same machine)
+      MQ_ADMIN_PASSWORD: "Master21091996"
       MQ_PORT: "443" # the reachable port of MQ - change if external MQ port changes (port on proxy, not necessarily the one exposed in docker-compose)
       HOST_NETWORK: "off" # whether or not host networking is turned on. Only turn on if configured for host networking (see docker-compose.hostnetwork.yml). Will set host-level settings like iptables.
       VERBOSITY: "1" # logging verbosity level - 1, 2, or 3
       MANAGE_IPTABLES: "on" # deprecated
-      # PORT_FORWARD_SERVICES: "dns" # decide which services to port forward ("dns","ssh", or "mq")
+      PORT_FORWARD_SERVICES: "dns" # decide which services to port forward ("dns","ssh", or "mq")
 
     ports:
       - "51821-51830:51821-51830/udp" # wireguard ports
@@ -88,6 +89,18 @@ services:
       - traefik.http.routers.netmaker-api.rule=Host(`api-netmaker.${NETMAKER_BASE_DOMAIN}`)
       - traefik.http.routers.netmaker-api.service=netmaker-api
       - traefik.http.services.netmaker-api.loadbalancer.server.port=8081
+
+  coredns:
+    container_name: coredns
+    image: coredns/coredns
+    command: -conf /root/dnsconfig/Corefile
+    depends_on:
+      - netmaker
+    restart: always
+    networks:
+      - traefik-internetwork
+    volumes:
+      - /datacenter/docker/core-dns:/root/dnsconfig
 
   netmaker-ui:  # The Netmaker UI Component
     container_name: netmaker-ui
