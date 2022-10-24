@@ -52,7 +52,7 @@ services:
       SERVER_HTTP_HOST: "api-netmaker.${NETMAKER_BASE_DOMAIN}" # Overrides SERVER_HOST if set. Useful for making HTTP available via different interfaces/networks.
       SERVER_API_CONN_STRING: "api-netmaker.${NETMAKER_BASE_DOMAIN}:443"
       COREDNS_ADDR: "152.69.211.33" # Address of the CoreDNS server. Defaults to SERVER_HOST
-      DNS_MODE: "on" # Enables DNS Mode, meaning all nodes will set hosts file for private dns settings.
+      DNS_MODE: "off" # Enables DNS Mode, meaning all nodes will set hosts file for private dns settings.
       API_PORT: "8081" # The HTTP API port for Netmaker. Used for API calls / communication from front end. If changed, need to change port of BACKEND_URL for netmaker-ui.
       CLIENT_MODE: "on" # Depricated. CLIENT_MODE should always be ON
       REST_BACKEND: "on" # Enables the REST backend (API running on API_PORT at SERVER_HTTP_HOST). Change to "off" to turn off.
@@ -75,7 +75,7 @@ services:
       HOST_NETWORK: "off" # whether or not host networking is turned on. Only turn on if configured for host networking (see docker-compose.hostnetwork.yml). Will set host-level settings like iptables.
       VERBOSITY: "1" # logging verbosity level - 1, 2, or 3
       MANAGE_IPTABLES: "on" # deprecated
-      PORT_FORWARD_SERVICES: "dns" # decide which services to port forward ("dns","ssh", or "mq")
+      # PORT_FORWARD_SERVICES: "dns" # decide which services to port forward ("dns","ssh", or "mq")
 
     ports:
       - "51821-51830:51821-51830/udp" # wireguard ports
