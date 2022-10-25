@@ -27,10 +27,22 @@ services:
       - traefik.tcp.routers.mqtts.service=mqtts-svc
       - traefik.tcp.routers.mqtts.entrypoints=websecure
       
+  coredns:
+    container_name: coredns
+    image: coredns/coredns
+    command: -conf /root/dnsconfig/Corefile
+    depends_on:
+      - netmaker
+    restart: always
+    networks:
+      - traefik-internetwork
+    volumes:
+      - /datacenter/docker/core-dns:/root/dnsconfig
 
   netmaker: # The Primary Server for running Netmaker
     container_name: netmaker
     image: gravitl/netmaker:v0.14.2
+    hostname: netmaker
     cap_add: 
       - NET_ADMIN
       - NET_RAW
@@ -93,6 +105,7 @@ services:
   netmaker-ui:  # The Netmaker UI Component
     container_name: netmaker-ui
     image: gravitl/netmaker-ui:v0.14.2
+    hostname: netmaker-ui
     depends_on:
       - netmaker
     links:
