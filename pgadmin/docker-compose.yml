@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: unless-stopped
+    networks:
+      - traefik-internetwork
+      - postgres-infra
+    volumes:
+      - /datacenter/docker/pgadmin:/var/lib/pgadmin
+      - /datacenter/docker/pgadmin/servers.json:/pgadmin4/servers.json
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=$CF_API_EMAIL
+      - PGADMIN_DEFAULT_PASSWORD=Master21091996
+      - SCRIPT_NAME=/pgadmin4
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-internetwork
+      - traefik.http.routers.pgadmin.rule=Host(`pgadmin.mcbourdeux-workstation.com`) && PathPrefix(`/pgadmin4`)
+      - traefik.http.routers.pgadmin.entrypoints=websecure
+      - traefik.http.routers.pgadmin.tls.certresolver=letsencrypt
+
+networks:
+  traefik-internetwork:
+    external: true

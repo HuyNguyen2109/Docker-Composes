@@ -2,11 +2,12 @@ version: '3'
 
 services:
   db:
-    image: postgres:14.5
+    image: postgres:14-alpine
     container_name: nextcloud-db
     hostname: postgres
     networks:
-      - postgres-infra
+      traefik-internetwork:
+        ipv4_address: 172.18.0.20
     environment:
       - PUID=$PUID
       - PGID=$PGID
@@ -15,15 +16,27 @@ services:
     volumes:
       - /datacenter/docker/postgres:/var/lib/postgresql/data
     restart: always
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+      - traefik.enable=true
+      - traefik.docker.network=traefik.internetwork
+      - traefik.tcp.routers.postgres.entryPoints=postgres
+      - traefik.tcp.routers.postgres.service=postgres
+      - traefik.tcp.routers.postgres.rule=HostSNI(`*`)
+      # services (needed for TCP)
+      - traefik.tcp.services.postgres.loadbalancer.server.port=5432
   
   cache:
-    image: redis:alpine
+    image: redis:latest
     container_name: nextcloud-cache
     networks:
-      - redis-infra
+      traefik-internetwork:
+        ipv4_address: 172.18.0.19
     hostname: redis
     restart: always
     command: redis-server --save 20 1 --loglevel warning
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
     volumes: 
       - /datacenter/docker/redis:/data
 
@@ -31,11 +44,9 @@ services:
     image: nextcloud:latest
     container_name: nextcloud-app
     hostname: nextcloud-app
-    user: 0:0
     networks:
-      - postgres-infra
-      - redis-infra
-      - traefik-internetwork
+      traefik-internetwork:
+        ipv4_address: 172.18.0.18
     environment:
       - PUID=0
       - PGID=0
@@ -48,18 +59,31 @@ services:
       - REDIS_HOST_PORT=6379
       - PHP_MEMORY_LIMIT=4G
       - PHP_UPLOAD_LIMIT=15G
+      - APACHE_DISABLE_REWRITE_IP=1
     volumes:
       - /datacenter/docker/nextcloud:/var/www/html:rw
       - /Ext-Onedrive:/mnt/onedrive-personal:rw
       - /datacenter/temp/nextcloud:/mnt/tmp:rw
-      - /datacenter/docker/zzz-uploadTempDirectory.ini:/usr/local/etc/php/conf.d/zzz-uploadFileSize.ini:ro
+      #- /datacenter/docker/nextcloud/php-user-config:/usr/local/etc/php/conf.d
     restart: unless-stopped
     labels:
-      - traefik.enable=true
-      - traefik.docker.network=traefik-internetwork
-      - traefik.http.routers.nextcloud-app.rule=Host(`altt-cloud.gxcaothai.net`)
-      - traefik.http.routers.nextcloud-app.entrypoints=websecure
-      - traefik.http.routers.nextcloud-app.tls.certresolver=letsencrypt
+      - "traefik.enable=true"
+      - "traefik.http.routers.nextcloud-app.entrypoints=web"
+      - "traefik.http.routers.nextcloud-app.rule=Host(`altt-cloud.gxcaothai.net`)"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.nextcloud-app.middlewares=https-redirect"
+      - "traefik.http.routers.nextcloud-app-secure.entrypoints=websecure"
+      - "traefik.http.routers.nextcloud-app-secure.rule=Host(`altt-cloud.gxcaothai.net`)"
+      - "traefik.http.middlewares.nc-rep.redirectregex.regex=https://(.*)/.well-known/(card|cal)dav"
+      - "traefik.http.middlewares.nc-rep.redirectregex.replacement=https://$$1/remote.php/dav/"
+      - "traefik.http.middlewares.nc-rep.redirectregex.permanent=true"
+      - "traefik.http.middlewares.nc-header.headers.customFrameOptionsValue=SAMEORIGIN"
+      - "traefik.http.routers.nextcloud-app-secure.middlewares=nc-rep,nc-header"
+      - "traefik.http.routers.nextcloud-app-secure.tls=true"
+      - "traefik.http.routers.nextcloud-app-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.nextcloud-app-secure.service=nextcloud"
+      - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik-internetwork"
 
     depends_on:
       - db
@@ -69,20 +93,21 @@ services:
     image: nextcloud:latest
     container_name: nextcloud-cron
     networks:
-      - postgres-infra
-      - redis-infra
+      traefik-internetwork:
+        ipv4_address: 172.18.0.17
     restart: always
     entrypoint: /cron.sh
+    environment:
+      - PUID=33
+      - PGID=33
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
     volumes:
       - /datacenter/docker/nextcloud:/var/www/html
+      - /datacenter/docker/nextcloud/data:/var/www/html/data
     depends_on:
-      - db
-      - cache
+      - app
       
 networks:
   traefik-internetwork:
-    external: true
-  redis-infra:
-    external: true
-  postgres-infra:
     external: true
