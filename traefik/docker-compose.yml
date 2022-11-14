@@ -17,7 +17,7 @@ services:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --providers.docker.endpoint=unix:///var/run/docker.sock
-      - --providers.docker.swarmmode
+      - --providers.docker.swarmMode=true
       
       - --entryPoints.console.address=:8088
       - --entrypoints.web.address=:80
