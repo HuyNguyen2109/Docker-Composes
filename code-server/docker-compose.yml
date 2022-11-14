@@ -6,6 +6,8 @@ services:
       - traefik-swarm-network
     deploy:
       mode: replicated
+      ports:
+        - 8443:8443
       replicas: 4
       placement:
         constraints:
