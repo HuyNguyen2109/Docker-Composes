@@ -16,7 +16,7 @@ services:
           - node.labels.arch==amd64
       labels:
           - traefik.enable=true
-          - traefik.http.middlewares.admin.basicauth.users=admin:{SHA}21PspRSCShmulruE2XnUaON2Prc=
+          - traefik.http.middlewares.admin.basicauth.users=traefik-user:traefik-password
           - traefik.docker.network=traefik-swarm-network
       
           - traefik.http.routers.thisproxylocal.rule=Host(`103.82.24.123`)
@@ -54,7 +54,7 @@ services:
       - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
-      - --certificatesresolvers.letsencrypt.acme.email=JohnasHuy21091996@gmail.com  # replace with your email
+      - --certificatesresolvers.letsencrypt.acme.email=cloudflare-email  # replace with your email
       - --certificatesresolvers.letsencrypt.acme.storage=acme/acme.json
       - --certificatesresolvers.letsencrypt.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
     volumes:
@@ -62,8 +62,8 @@ services:
       - /datacenter/docker/traefik/acme:/acme
       - /datacenter/docker/traefik/logs:/logs
     environment:
-      - CF_API_EMAIL=JohnasHuy21091996@gmail.com
-      - CF_API_KEY=AbQRXd_lgyHrOraTocS6wHQKBZd6HZJ5wCEYCVxG
+      - CF_API_EMAIL=clouflare-email
+      - CF_API_KEY=cloudflare-api-key
     
   whoami:
     image: "traefik/whoami"
@@ -83,4 +83,14 @@ services:
       
 networks:
   traefik-swarm-network:
+    external: true
+    
+secrets:
+  cloudflare-api-key:
+    external: true
+  cloudflare-amil:
+    external: true
+  traefik-password:
+    external: true
+  traefik-user:
     external: true
