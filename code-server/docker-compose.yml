@@ -30,7 +30,7 @@ services:
       - TZ=Europe/London
       - PASSWORD=code-server-password
       - SUDO_PASSWORD=code-server-password
-      - PROXY_DOMAIN=code-server.mcbourdeux-workstation.com #optional
+      - PROXY_DOMAIN=mcbourdeux-workstation.com #optional
       - DEFAULT_WORKSPACE=/config/workspace #optional
     volumes:
       - /datacenter/docker/code-server:/config
