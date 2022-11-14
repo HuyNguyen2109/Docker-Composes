@@ -43,7 +43,7 @@ services:
       - --certificatesresolvers.letsencrypt.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
     labels:
       - traefik.enable=true
-      - traefik.http.middlewares.admin.basicauth.users=$TRAEFIK_USER:$TRAEFIK_PASSWORD
+      - traefik.http.middlewares.admin.basicauth.users=admin:{SHA}21PspRSCShmulruE2XnUaON2Prc=
       - traefik.docker.network=traefik-swarm-network
       
       - traefik.http.routers.thisproxylocal.rule=Host(`103.82.24.123`)
