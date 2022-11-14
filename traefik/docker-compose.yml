@@ -3,7 +3,6 @@ version: '3'
 services:
   traefik:
     image: traefik:v2.2.11
-    container_name: traefik
     networks:
       - traefik-swarm-network
     ports:
@@ -11,9 +10,9 @@ services:
       - 443:443
       - 8088:8088
     deploy:
-      placements:
+      placement:
         constraints:
-          node.labels.arch==amd64
+          - node.labels.arch==amd64
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
@@ -38,7 +37,7 @@ services:
       - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
-      - --certificatesresolvers.letsencrypt.acme.email=${CF_API_EMAIL}  # replace with your email
+      - --certificatesresolvers.letsencrypt.acme.email=JohnasHuy21091996@gmail.com  # replace with your email
       - --certificatesresolvers.letsencrypt.acme.storage=acme/acme.json
       - --certificatesresolvers.letsencrypt.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
     labels:
@@ -62,19 +61,20 @@ services:
       - /datacenter/docker/traefik/acme:/acme
       - /datacenter/docker/traefik/logs:/logs
     environment:
-      - CF_API_EMAIL=$CF_API_EMAIL
-      - CF_API_KEY=$CF_API_KEY
-    restart: always
+      - CF_API_EMAIL=JohnasHuy21091996@gmail.com
+      - CF_API_KEY=AbQRXd_lgyHrOraTocS6wHQKBZd6HZJ5wCEYCVxG
     
   whoami:
     image: "traefik/whoami"
-    container_name: "simple-service"
-    restart: unless-stopped
+    deploy:
+      placement:
+        constraints:
+          - node.labels.arch==arm64
     networks:
-      - traefik-internetwork
+      - traefik-swarm-network
     labels:
       - traefik.enable=true
-      - traefik.docker.network=traefik-internetwork
+      - traefik.docker.network=traefik-swarm-network
       - traefik.http.routers.whoami.rule=Host(`test.gxcaothai.net`)  
       - traefik.http.routers.whoami.entrypoints=websecure
       - traefik.http.routers.whoami.tls.certresolver=letsencrypt
