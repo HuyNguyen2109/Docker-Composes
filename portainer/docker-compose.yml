@@ -1,27 +1,46 @@
 version: "3.3"
 
 services:
+  agent:
+    image: portainer/agent
+    environment:
+      AGENT_CLUSTER_ADDR: tasks.agent
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+    networks:
+      - traefik-swarm-network
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.platform.os == linux
+          
   portainer:
     image: portainer/portainer-ee:latest
-    command: -H unix:///var/run/docker.sock
-    container_name: portainer
-    restart: always
+    command: -H tcp://tasks.agent:9001 --tlsskipverify
     ports:
       - 9000:9000
     networks:
-      - traefik-internetwork
+      - traefik-swarm-network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /datacenter/docker/portainer:/data
-    labels:
-      # Frontend
-      - "traefik.enable=true"
-      - "traefik.http.routers.portainer.rule=Host(`portainer2.mcbourdeux-workstation.com`)"
-      - "traefik.http.routers.portainer.entrypoints=websecure"
-      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
-      - "traefik.http.routers.portainer.service=portainer"
-      - "traefik.http.routers.portainer.tls.certresolver=letsencrypt"
+    deploy:
+      placement:
+        constraints:
+          - node.role==manager
+          - node.labels.arch==amd64
+      labels:
+        # Frontend
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-swarm-network"
+        - "traefik.http.routers.portainer.rule=Host(`portainer2.mcbourdeux-workstation.com`)"
+        - "traefik.http.routers.portainer.entrypoints=websecure"
+        - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+        - "traefik.http.routers.portainer.service=portainer"
+        - "traefik.http.routers.portainer.tls.certresolver=letsencrypt"
 
 networks:
-  traefik-internetwork:
+  traefik-swarm-network:
     external: true
