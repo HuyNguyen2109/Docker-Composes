@@ -1,0 +1,39 @@
+version: "3.1"
+services:
+  code-server:
+    image: lscr.io/linuxserver/code-server:latest
+    networks:
+      traefik-swarm-network
+    deploy:
+      repilcas: 4
+      placement:
+        constraints:
+          - node.role==worker
+          - node.labels.arch==arm64
+      labels:
+        # Frontend
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-swarm-network"
+        - "traefik.http.routers.code-server.rule=Host(`code-server.mcbourdeux-workstation.com`)"
+        - "traefik.http.routers.code-server.entrypoints=websecure"
+        - "traefik.http.services.code-server.loadbalancer.server.port=9000"
+        - "traefik.http.routers.code-server.service=code-server"
+        - "traefik.http.routers.code-server.tls.certresolver=letsencrypt"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - PASSWORD=code-server-password
+      - SUDO_PASSWORD=code-server-password
+      - PROXY_DOMAIN=code-server.mcbourdeux-workstation.com #optional
+      - DEFAULT_WORKSPACE=/config/workspace #optional
+    volumes:
+      - /datacenter/docker/code-server:/config
+
+networks:
+  traefik-swarm-network:
+    external: true
+
+secrets:
+  code-server-password:
+    external: true
