@@ -3,7 +3,7 @@ services:
   code-server:
     image: lscr.io/linuxserver/code-server:latest
     networks:
-      traefik-swarm-network
+      - traefik-swarm-network
     deploy:
       repilcas: 4
       placement:
