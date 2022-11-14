@@ -35,7 +35,7 @@ services:
         # Frontend
         - "traefik.enable=true"
         - "traefik.docker.network=traefik-swarm-network"
-        - "traefik.http.routers.portainer.rule=Host(`portainer2.mcbourdeux-workstation.com`)"
+        - "traefik.http.routers.portainer.rule=Host(`portainer.mcbourdeux-workstation.com`)"
         - "traefik.http.routers.portainer.entrypoints=websecure"
         - "traefik.http.services.portainer.loadbalancer.server.port=9000"
         - "traefik.http.routers.portainer.service=portainer"
