@@ -5,18 +5,21 @@ services:
     networks:
       - traefik-swarm-network
     deploy:
+      mode: replicated
       repilcas: 4
       placement:
         constraints:
           - node.role==worker
           - node.labels.arch==arm64
+      restart_policy:
+        condition: on-failure
       labels:
         # Frontend
         - "traefik.enable=true"
         - "traefik.docker.network=traefik-swarm-network"
         - "traefik.http.routers.code-server.rule=Host(`code-server.mcbourdeux-workstation.com`)"
         - "traefik.http.routers.code-server.entrypoints=websecure"
-        - "traefik.http.services.code-server.loadbalancer.server.port=9000"
+        - "traefik.http.services.code-server.loadbalancer.server.port=8443"
         - "traefik.http.routers.code-server.service=code-server"
         - "traefik.http.routers.code-server.tls.certresolver=letsencrypt"
     environment:
