@@ -14,6 +14,22 @@ services:
         constraints:
           - node.role==manager
           - node.labels.arch==amd64
+      labels:
+          - traefik.enable=true
+          - traefik.http.middlewares.admin.basicauth.users=admin:{SHA}21PspRSCShmulruE2XnUaON2Prc=
+          - traefik.docker.network=traefik-swarm-network
+      
+          - traefik.http.routers.thisproxylocal.rule=Host(`103.82.24.123`)
+          - traefik.http.routers.thisproxylocal.entryPoints=console
+          - traefik.http.routers.thisproxylocal.service=api@internal
+          - traefik.http.routers.thisproxylocal.middlewares=admin
+      
+          - traefik.http.services.thisproxytls.loadbalancer.server.port=8088
+          - traefik.http.routers.thisproxytls.rule=Host(`traefik.gxcaothai.net`) || Host(`traefik.mcbourdeux-workstation.com`)
+          - traefik.http.routers.thisproxytls.entrypoints=websecure
+          - traefik.http.routers.thisproxytls.service=api@internal
+          - traefik.http.routers.thisproxytls.middlewares=admin
+          - traefik.http.routers.thisproxytls.tls.certresolver=letsencrypt
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
@@ -41,22 +57,6 @@ services:
       - --certificatesresolvers.letsencrypt.acme.email=JohnasHuy21091996@gmail.com  # replace with your email
       - --certificatesresolvers.letsencrypt.acme.storage=acme/acme.json
       - --certificatesresolvers.letsencrypt.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
-    labels:
-      - traefik.enable=true
-      - traefik.http.middlewares.admin.basicauth.users=admin:{SHA}21PspRSCShmulruE2XnUaON2Prc=
-      - traefik.docker.network=traefik-swarm-network
-      
-      - traefik.http.routers.thisproxylocal.rule=Host(`103.82.24.123`)
-      - traefik.http.routers.thisproxylocal.entryPoints=console
-      - traefik.http.routers.thisproxylocal.service=api@internal
-      - traefik.http.routers.thisproxylocal.middlewares=admin
-      
-      - traefik.http.services.thisproxytls.loadbalancer.server.port=8088
-      - traefik.http.routers.thisproxytls.rule=Host(`traefik.gxcaothai.net`) || Host(`traefik.mcbourdeux-workstation.com`)
-      - traefik.http.routers.thisproxytls.entrypoints=websecure
-      - traefik.http.routers.thisproxytls.service=api@internal
-      - traefik.http.routers.thisproxytls.middlewares=admin
-      - traefik.http.routers.thisproxytls.tls.certresolver=letsencrypt
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /datacenter/docker/traefik/acme:/acme
@@ -72,15 +72,14 @@ services:
         constraints:
           - node.role==worker
           - node.labels.arch==arm64
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-swarm-network
+        - traefik.http.routers.whoami.rule=Host(`test.gxcaothai.net`)  
+        - traefik.http.routers.whoami.entrypoints=websecure
+        - traefik.http.routers.whoami.tls.certresolver=letsencrypt
     networks:
       - traefik-swarm-network
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=traefik-swarm-network
-      - traefik.http.routers.whoami.rule=Host(`test.gxcaothai.net`)  
-      - traefik.http.routers.whoami.entrypoints=websecure
-      - traefik.http.routers.whoami.tls.certresolver=letsencrypt
-
       
 networks:
   traefik-swarm-network:
