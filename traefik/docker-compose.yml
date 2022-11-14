@@ -5,15 +5,20 @@ services:
     image: traefik:v2.2.11
     container_name: traefik
     networks:
-      - traefik-internetwork
+      - traefik-swarm-network
     ports:
       - 80:80
       - 443:443
       - 8088:8088
+    deploy:
+      placements:
+        constraints:
+          node.labels.arch==amd64
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --providers.docker.endpoint=unix:///var/run/docker.sock
+      - --providers.docker.swarmmode
       
       - --entryPoints.console.address=:8088
       - --entrypoints.web.address=:80
@@ -39,8 +44,9 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.middlewares.admin.basicauth.users=$TRAEFIK_USER:$TRAEFIK_PASSWORD
+      - traefik.docker.network=traefik-swarm-network
       
-      - traefik.http.routers.thisproxylocal.rule=Host(`152.69.211.33`)
+      - traefik.http.routers.thisproxylocal.rule=Host(`103.82.24.123`)
       - traefik.http.routers.thisproxylocal.entryPoints=console
       - traefik.http.routers.thisproxylocal.service=api@internal
       - traefik.http.routers.thisproxylocal.middlewares=admin
@@ -75,5 +81,5 @@ services:
 
       
 networks:
-  traefik-internetwork:
+  traefik-swarm-network:
     external: true
