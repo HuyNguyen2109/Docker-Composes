@@ -68,6 +68,7 @@ services:
   whoami:
     image: "traefik/whoami"
     deploy:
+      mode: global
       placement:
         constraints:
           - node.role==worker
