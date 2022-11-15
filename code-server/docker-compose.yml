@@ -2,11 +2,13 @@ version: "3.1"
 services:
   code-server:
     image: lscr.io/linuxserver/code-server:latest
+    ports:
+        - 8443:8443
     networks:
       - traefik-swarm-network
     deploy:
       mode: replicated
-      replicas: 4
+      replicas: 1
       placement:
         constraints:
           - node.role==worker
@@ -28,7 +30,7 @@ services:
       - TZ=Europe/London
       - PASSWORD=code-server-password
       - SUDO_PASSWORD=code-server-password
-      - PROXY_DOMAIN=code-server.mcbourdeux-workstation.com #optional
+      - PROXY_DOMAIN=mcbourdeux-workstation.com #optional
       - DEFAULT_WORKSPACE=/config/workspace #optional
     volumes:
       - /datacenter/docker/code-server:/config
