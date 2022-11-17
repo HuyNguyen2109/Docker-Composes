@@ -2,8 +2,8 @@ version: "3.1"
 services:
   code-server:
     image: lscr.io/linuxserver/code-server:latest
-    ports:
-        - 8443:8443
+    expose:
+        - 8443
     networks:
       - traefik-swarm-network
     deploy:
