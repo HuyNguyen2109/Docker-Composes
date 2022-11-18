@@ -70,6 +70,8 @@ services:
     
   whoami:
     image: "traefik/whoami"
+    expose:
+      - 80
     deploy:
       mode: global
       placement:
