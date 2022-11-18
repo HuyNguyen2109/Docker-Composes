@@ -66,7 +66,7 @@ services:
       - /datacenter2/docker/traefik/logs:/logs
     environment:
       - CF_API_EMAIL_FILE=/run/secret/clouflare-email
-      - CF_API_KEY=/run/secrets/cloudflare-api-key
+      - CF_API_KEY_FILE=/run/secrets/cloudflare-api-key
     
   whoami:
     image: "traefik/whoami"
