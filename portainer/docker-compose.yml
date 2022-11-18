@@ -30,7 +30,6 @@ services:
       placement:
         constraints:
           - node.role==manager
-          - node.labels.arch==amd64
       labels:
         # Frontend
         - "traefik.enable=true"
