@@ -94,7 +94,7 @@ networks:
 secrets:
   cloudflare-api-key:
     external: true
-  cloudflare-amil:
+  cloudflare-email:
     external: true
   traefik-password:
     external: true
