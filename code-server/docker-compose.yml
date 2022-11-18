@@ -2,8 +2,8 @@ version: "3.1"
 services:
   code-server:
     image: lscr.io/linuxserver/code-server:latest
-    expose:
-        - 8443
+    secrets:
+      - code-server-password
     networks:
       - traefik-swarm-network
     deploy:
@@ -17,24 +17,19 @@ services:
         condition: on-failure
       labels:
         # Frontend
-        - "traefik.enable=true"
-        - "traefik.docker.network=traefik-swarm-network"
-        - "traefik.http.routers.code-http.entrypoints=web"
-        - "traefik.http.routers.code-http.rule=Host(`code-server.mcbourdeux-workstation.com`)"
-        - "traefik.http.routers.code-http.middlewares=code-https"
-        - "traefik.http.routers.code-http.service=code"
-        - "traefik.http.services.code.loadbalancer.server.port=8443"
-        - "traefik.http.middlewares.code-https.redirectscheme.scheme=https"
-        - "traefik.http.routers.code.entrypoints=websecure"
-        - "traefik.http.routers.code.rule=Host(`code-server.mcbourdeux-workstation.com`)"
-        - "traefik.http.routers.code.tls=true"
-        - "traefik.http.routers.code.tls.certresolver=letsencrypt"
+        - traefik.enable=true
+        - traefik.docker.network=traefik-swarm-network
+        - traefik.http.routers.code.rule=Host(`code-server.mcbourdeux-workstation.com`)
+        - traefik.http.routers.code.entrypoints=websecure
+        - traefik.http.routers.code.tls.certresolver=letsencrypt
+        - traefik.http.routers.code.service=code
+        - traefik.http.services.code.loadbalancer.server.port=8443
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=Europe/London
-      - PASSWORD=code-server-password
-      - SUDO_PASSWORD=code-server-password
+      - PASSWORD_FILE=/run/secrets/code-server-password
+      - SUDO_PASSWORD_FILE=/run/secrets/code-server-password
       - PROXY_DOMAIN=mcbourdeux-workstation.com #optional
       - DEFAULT_WORKSPACE=/config/workspace #optional
     volumes:
