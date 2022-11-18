@@ -78,12 +78,9 @@ services:
           - node.labels.arch==arm64
       labels:
         - traefik.enable=true
-        - traefik.port=80
         - traefik.docker.network=traefik-swarm-network
         - traefik.http.routers.whoami.rule=Host(`test.mcbourdeux-workstation.com`)  
-        - traefik.http.routers.whoami.entrypoints=websecure
-        - traefik.http.routers.whoami.tls.certresolver=letsencrypt
-        - traefik.http.routers.whoami.service=whoami
+        - traefik.http.routers.whoami.entrypoints=web
         - traefik.http.services.whoami.loadbalancer.server.port=80
     networks:
       - traefik-swarm-network
