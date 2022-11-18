@@ -9,6 +9,9 @@ services:
       - 80:80
       - 443:443
       - 8088:8088
+    secret:
+      - cloudflare-api-key
+      - cloudflare-email
     deploy:
       placement:
         constraints:
@@ -62,8 +65,8 @@ services:
       - /datacenter2/docker/traefik/acme:/acme
       - /datacenter2/docker/traefik/logs:/logs
     environment:
-      - CF_API_EMAIL=clouflare-email
-      - CF_API_KEY=cloudflare-api-key
+      - CF_API_EMAIL_FILE=/run/secret/clouflare-email
+      - CF_API_KEY=/run/secrets/cloudflare-api-key
     
   whoami:
     image: "traefik/whoami"
