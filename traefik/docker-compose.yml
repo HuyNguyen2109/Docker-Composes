@@ -71,8 +71,7 @@ services:
     
   whoami:
     image: "traefik/whoami"
-    expose:
-      - 80
+    endpoint-mode: dnsrr
     deploy:
       mode: global
       placement:
