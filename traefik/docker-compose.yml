@@ -38,6 +38,7 @@ services:
       - --providers.docker.endpoint=unix:///var/run/docker.sock
       - --providers.docker.swarmMode=true
       - --providers.docker.network=traefik-swarm-network
+      - --providers.docker.useBindPortIP=true
       
       - --entryPoints.console.address=:8088
       - --entrypoints.web.address=:80
