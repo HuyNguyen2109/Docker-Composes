@@ -61,8 +61,8 @@ services:
       - --certificatesresolvers.letsencrypt.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /datacenter/docker/traefik/acme:/acme
-      - /datacenter/docker/traefik/logs:/logs
+      - /datacenter2/docker/traefik/acme:/acme
+      - /datacenter2/docker/traefik/logs:/logs
     environment:
       - CF_API_EMAIL=clouflare-email
       - CF_API_KEY=cloudflare-api-key
