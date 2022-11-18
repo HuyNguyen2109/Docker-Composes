@@ -25,7 +25,7 @@ services:
       - traefik-swarm-network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /datacenter/docker/portainer:/data
+      - /datacenter2/docker/portainer:/data
     deploy:
       placement:
         constraints:
