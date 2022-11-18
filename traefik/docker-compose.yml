@@ -50,6 +50,7 @@ services:
       - --api.insecure=true
       - --global.checkNewVersion=true
       - --log.level=DEBUG
+      - --log.format=json
       - --log.filePath=/logs/traefik.log
       - --accessLog.filePath=/logs/access.log
       - --accessLog.bufferingSize=100
