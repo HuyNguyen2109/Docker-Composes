@@ -16,10 +16,10 @@ services:
           - node.labels.arch==amd64
       labels:
           - traefik.enable=true
-          - traefik.http.middlewares.admin.basicauth.users=traefik-user:traefik-password
+          - traefik.http.middlewares.admin.basicauth.users=admin:{SHA}21PspRSCShmulruE2XnUaON2Prc=
           - traefik.docker.network=traefik-swarm-network
       
-          - traefik.http.routers.thisproxylocal.rule=Host(`103.82.24.123`)
+          - traefik.http.routers.thisproxylocal.rule=Host(`103.82.24.123`) || Host(`138.2.67.204`)
           - traefik.http.routers.thisproxylocal.entryPoints=console
           - traefik.http.routers.thisproxylocal.service=api@internal
           - traefik.http.routers.thisproxylocal.middlewares=admin
@@ -36,6 +36,7 @@ services:
       - --providers.docker.endpoint=unix:///var/run/docker.sock
       - --providers.docker.swarmMode=true
       - --providers.docker.network=traefik-swarm-network
+      - --providers.docker.useBindPortIP=true
       
       - --entryPoints.console.address=:8088
       - --entrypoints.web.address=:80
