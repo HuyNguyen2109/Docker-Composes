@@ -14,12 +14,18 @@ services:
       - PGADMIN_DEFAULT_EMAIL=$CF_API_EMAIL
       - PGADMIN_DEFAULT_PASSWORD=$PG_PASSWORD
     labels:
-      - traefik.enable=true
-      - traefik.docker.network=traefik-internetwork
-      - traefik.http.routers.pgadmin.rule=Host(`pgadmin.mcbourdeux-workstation.com`)
-      - traefik.http.routers.pgadmin.entrypoints=websecure
-      - traefik.http.routers.pgadmin.tls.certresolver=letsencrypt
-      - traefik.http.services.pgadmin.loadbalancer.server.port=80
+      - "traefik.enable=true"
+      - "traefik.http.routers.pgadmin-app.entrypoints=web"
+      - "traefik.http.routers.pgadmin-app.rule=Host(`pgadmin.mcbourdeux-workstation.com`)"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.pgadmin-app.middlewares=https-redirect"
+      - "traefik.http.routers.pgadmin-app-secure.entrypoints=websecure"
+      - "traefik.http.routers.pgadmin-app-secure.rule=Host(`pgadmin.mcbourdeux-workstation.com`)"
+      - "traefik.http.routers.pgadmin-app-secure.tls=true"
+      - "traefik.http.routers.pgadmin-app-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.pgadmin-app-secure.service=pgadmin"
+      - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik-internetwork"
 
 networks:
   traefik-internetwork:
