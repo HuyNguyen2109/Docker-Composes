@@ -13,12 +13,12 @@ services:
       - /datacenter/docker/pgadmin/servers.json:/pgadmin4/servers.json
     environment:
       - PGADMIN_DEFAULT_EMAIL=$CF_API_EMAIL
-      - PGADMIN_DEFAULT_PASSWORD=Master21091996
+      - PGADMIN_DEFAULT_PASSWORD=$PG_PASSWORD
       - SCRIPT_NAME=/pgadmin4
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-internetwork
-      - traefik.http.routers.pgadmin.rule=Host(`pgadmin.mcbourdeux-workstation.com`) && PathPrefix(`/pgadmin4`)
+      - traefik.http.routers.pgadmin.rule=Host(`pgadmin.mcbourdeux-workstation.com`)
       - traefik.http.routers.pgadmin.entrypoints=websecure
       - traefik.http.routers.pgadmin.tls.certresolver=letsencrypt
 
