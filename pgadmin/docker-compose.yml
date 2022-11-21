@@ -17,7 +17,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-internetwork
-      - traefik.http.routers.pgadmin.rule=Host(`pgadmin.mcbourdeux-workstation.com`)
+      - traefik.http.routers.pgadmin.rule=Host(`pgadmin.mcbourdeux-workstation.com`) && PathPrefix(`/pgadmin4`)
       - traefik.http.routers.pgadmin.entrypoints=websecure
       - traefik.http.routers.pgadmin.tls.certresolver=letsencrypt
 
