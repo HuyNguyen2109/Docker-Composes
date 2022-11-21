@@ -18,6 +18,8 @@ services:
       - traefik.enable=true
       - traefik.docker.network=traefik-internetwork
       - traefik.http.routers.pgadmin.rule=Host(`pgadmin.mcbourdeux-workstation.com`) && PathPrefix(`/pgadmin4`)
+      - traefik.http.middlewares.pgadmin.stripprefix.prefixes=/pgadmin4
+      - traefik.http.middlewares.pgadmin.stripprefix.forceslash=false
       - traefik.http.routers.pgadmin.entrypoints=websecure
       - traefik.http.routers.pgadmin.tls.certresolver=letsencrypt
 
