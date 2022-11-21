@@ -7,7 +7,6 @@ services:
     restart: unless-stopped
     networks:
       - traefik-internetwork
-      - postgres-infra
     volumes:
       - /datacenter/docker/pgadmin:/var/lib/pgadmin
       - /datacenter/docker/pgadmin/servers.json:/pgadmin4/servers.json
