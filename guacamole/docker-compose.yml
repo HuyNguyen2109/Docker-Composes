@@ -12,7 +12,7 @@ services:
       - guacamole-remote-net
     
   guacamole-client:
-    image: guacamole/client
+    image: guacamole/guacamole
     depends_on:
       - guacd
     links:
