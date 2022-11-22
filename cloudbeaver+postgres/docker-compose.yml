@@ -13,9 +13,9 @@ services:
     volumes:
       - /datacenter/docker/postgres:/bitnami/postgresql
     environment:
-      - POSTGRESQL_PASSWORD: ${ROOT_PASSWORD}
-      - POSTGRESQL_DATABASE: 'postgres'
-      - POSTGRESQL_TIMEZONE: 'Asia/Ho_Chi_Minh'
+      - POSTGRESQL_PASSWORD=${ROOT_PASSWORD}
+      - POSTGRESQL_DATABASE='postgres'
+      - POSTGRESQL_TIMEZONE='Asia/Ho_Chi_Minh'
 
 
   cloudbeaver:
