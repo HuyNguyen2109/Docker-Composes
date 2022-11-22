@@ -21,7 +21,7 @@ services:
       - POSTGRES_DATABASE=${DB}
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - GUACD_HOST=guacd
+      - GUACD_HOSTNAME=guacd
       - GUACD_PORT=4822
     networks:
       - postgres-net
