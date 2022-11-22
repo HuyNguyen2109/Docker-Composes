@@ -24,6 +24,7 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     networks:
+      - postgres-net
       - guacamole-remote-net
       - traefik-internetwork
     labels:
