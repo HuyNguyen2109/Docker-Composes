@@ -30,11 +30,11 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.guacamole-app.entrypoints=web"
-      - "traefik.http.routers.guacamole-app.rule=Host(`guacamole.mcbourdeux-workstation.com`)"
+      - "traefik.http.routers.guacamole-app.rule=Host(`remote-server.mcbourdeux-workstation.com`)"
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.guacamole-app.middlewares=https-redirect"
       - "traefik.http.routers.guacamole-app-secure.entrypoints=websecure"
-      - "traefik.http.routers.guacamole-app-secure.rule=Host(`guacamole.mcbourdeux-workstation.com`)"
+      - "traefik.http.routers.guacamole-app-secure.rule=Host(`remote-server.mcbourdeux-workstation.com`)"
       - "traefik.http.routers.guacamole-app-secure.tls=true"
       - "traefik.http.routers.guacamole-app-secure.tls.certresolver=letsencrypt"
       - "traefik.http.routers.guacamole-app-secure.service=guacamole"
