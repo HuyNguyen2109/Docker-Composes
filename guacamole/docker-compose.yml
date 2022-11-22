@@ -17,7 +17,7 @@ services:
       - guacd
     links:
       - guacd
-      - bitnami-postgresql
+      - postgres
     container_name: guacamole-client
     environment:
       - POSTGRES_DATABASE=${DB}
