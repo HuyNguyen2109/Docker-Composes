@@ -15,14 +15,14 @@ services:
     image: guacamole/guacamole
     depends_on:
       - guacd
-    links:
-      - guacd
     container_name: guacamole-client
     environment:
       - POSTGRES_HOSTNAME=postgres:5432
       - POSTGRES_DATABASE=${DB}
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - GUACD_HOST=guacd
+      - GUACD_PORT=4822
     networks:
       - postgres-net
       - guacamole-remote-net
