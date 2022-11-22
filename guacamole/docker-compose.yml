@@ -38,7 +38,7 @@ services:
       - "traefik.http.routers.guacamole-app-secure.tls=true"
       - "traefik.http.routers.guacamole-app-secure.tls.certresolver=letsencrypt"
       - "traefik.http.routers.guacamole-app-secure.service=guacamole"
-      - "traefik.http.services.guacamole.loadbalancer.server.port=8978"
+      - "traefik.http.services.guacamole.loadbalancer.server.port=8080"
       - "traefik.docker.network=traefik-internetwork"
 
 networks:
