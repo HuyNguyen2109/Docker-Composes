@@ -11,8 +11,8 @@ services:
     expose:
       - 5432
     volumes:
-      - /datacenter/docker/postgres:/bitnami/postgresql
-      - /datacenter/docker/postgres/pg_hba.conf:/bitnami/postgresql/conf/pg_hba.conf
+      - /datacenter/docker/postgres/data:/bitnami/postgresql/data
+      - /datacenter/docker/postgres/conf:/bitnami/postgresql/conf
     environment:
       - POSTGRESQL_PASSWORD=${ROOT_PASSWORD}
       - POSTGRESQL_DATABASE='postgres'
