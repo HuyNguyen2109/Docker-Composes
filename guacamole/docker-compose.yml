@@ -17,9 +17,9 @@ services:
       - guacd
     links:
       - guacd
-      - postgres
     container_name: guacamole-client
     environment:
+      - POSTGRES_HOSTNAME=postgres:5432
       - POSTGRES_DATABASE=${DB}
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
