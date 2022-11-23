@@ -15,7 +15,7 @@ services:
     image: pihole/pihole
     container_name: pihole
     environment:
-      - WEBPASSWORD=Master21091996
+      - WEBPASSWORD=$ROOT_PASSWORD
     volumes:
       - /datacenter/docker/pihole/etc-pihole:/etc/pihole
       - /datacenter/docker/pihole/etc-dnsmasq.d:/etc/dnsmasq.d
@@ -37,7 +37,7 @@ services:
     environment:
       WG_HOST: '103.82.24.123'
       PASSWORD: $ROOT_PASSWORD
-      WG_DEFAULT_DNS: 1.1.1.1,1.0.0.1
+      WG_DEFAULT_DNS: 10.8.1.3
 
     volumes:
       - /datacenter/docker/wireguard:/etc/wireguard
