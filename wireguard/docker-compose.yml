@@ -35,7 +35,7 @@ services:
     container_name: wireguard
     restart: unless-stopped
     environment:
-      WG_HOST: '152.69.211.33'
+      WG_HOST: '103.82.24.123'
       PASSWORD: $ROOT_PASSWORD
       WG_DEFAULT_DNS: 1.1.1.1,1.0.0.1
 
