@@ -8,7 +8,6 @@ networks:
   traefik-swarm-network:
     external: true
   wg-easy:
-    name: wg-easy
     external: true
     ipam:
       config:
