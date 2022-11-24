@@ -1,5 +1,9 @@
 version: '3.8'
 
+secrets:
+  wireguard-password:
+    external: true
+
 networks:
   traefik-swarm-network:
     external: true
@@ -15,7 +19,7 @@ services:
     image: pihole/pihole
     container_name: pihole
     environment:
-      - WEBPASSWORD=Master21091996
+      - WEBPASSWORD=wireguard-password
     deploy:
       mode: global
       placement:
@@ -41,7 +45,7 @@ services:
     restart: unless-stopped
     environment:
       WG_HOST: '138.2.67.204'
-      PASSWORD: $ROOT_PASSWORD
+      PASSWORD: wireguard-password
       WG_DEFAULT_DNS: 1.1.1.1,1.0.0.1
 
     volumes:
@@ -66,7 +70,7 @@ services:
           - node.role==manager
       labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=traefik-internetwork"
+      - "traefik.docker.network=traefik-swarm-network"
       - "traefik.http.routers.wireguard-http.entrypoints=web"
       - "traefik.http.routers.wireguard-http.rule=Host(`wireguard.mcbourdeux-workstation.com`)"
       - "traefik.http.routers.wireguard-http.middlewares=wireguard-https"
