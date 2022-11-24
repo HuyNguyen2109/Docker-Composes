@@ -73,7 +73,6 @@ services:
     image: "traefik/whoami"
     deploy:
       mode: global
-      endpoint_mode: dnsrr
       placement:
         constraints:
           - node.role==worker
