@@ -8,6 +8,9 @@ services:
       - traefik-swarm-network
     deploy:
       mode: global
+      placement:
+        constraints:
+          - node.role==worker
       restart_policy:
         condition: on-failure
       labels:
