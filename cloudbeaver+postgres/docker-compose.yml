@@ -8,6 +8,8 @@ services:
     hostname: 'postgres'
     networks:
       - postgres-net
+    ports:
+      - 5432:5432
     expose:
       - 5432
     volumes:
@@ -15,7 +17,6 @@ services:
       - /datacenter/docker/postgres/conf:/bitnami/postgresql/conf
     environment:
       - POSTGRESQL_PASSWORD=${ROOT_PASSWORD}
-      - POSTGRESQL_DATABASE='postgres'
 
   cloudbeaver:
     image: dbeaver/cloudbeaver:latest
