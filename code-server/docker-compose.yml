@@ -7,12 +7,7 @@ services:
     networks:
       - traefik-swarm-network
     deploy:
-      mode: replicated
-      replicas: 2
-      placement:
-        constraints:
-          - node.role==worker
-          - node.labels.arch==arm64
+      mode: global
       restart_policy:
         condition: on-failure
       labels:
@@ -24,6 +19,8 @@ services:
         - traefik.http.routers.code.tls.certresolver=letsencrypt
         - traefik.http.routers.code.service=code
         - traefik.http.services.code.loadbalancer.server.port=8443
+        - traefik.http.services.whoami-service.loadbalancer.sticky.cookie=true
+        - traefik.http.services.whoami-service.loadbalancer.sticky.cookie.name=code_server_ha
     environment:
       - PUID=1000
       - PGID=1000
