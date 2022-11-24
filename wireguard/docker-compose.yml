@@ -63,7 +63,7 @@ services:
       mode: global
       placement:
         constraints:
-          - node.role==worker
+          - node.role==manager
       labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-internetwork"
