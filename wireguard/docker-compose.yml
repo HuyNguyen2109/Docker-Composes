@@ -1,7 +1,7 @@
 version: '3.8'
 
 networks:
-  traefik-internetwork:
+  traefik-swarm-network:
     external: true
   wg-easy:
     name: wg-easy
@@ -16,9 +16,14 @@ services:
     container_name: pihole
     environment:
       - WEBPASSWORD=Master21091996
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.role==manager
     volumes:
-      - /datacenter/docker/pihole/etc-pihole:/etc/pihole
-      - /datacenter/docker/pihole/etc-dnsmasq.d:/etc/dnsmasq.d
+      - /datacenter2/docker/pihole/etc-pihole:/etc/pihole
+      - /datacenter2/docker/pihole/etc-dnsmasq.d:/etc/dnsmasq.d
     ports:
       - "53:53/tcp"
       - "53:53/udp"
@@ -40,7 +45,7 @@ services:
       WG_DEFAULT_DNS: 1.1.1.1,1.0.0.1
 
     volumes:
-      - /datacenter/docker/wireguard:/etc/wireguard
+      - /datacenter2/docker/wireguard:/etc/wireguard
     ports:
       - 51821:51821/tcp
       - 51820:51820/udp
@@ -51,10 +56,15 @@ services:
       - net.ipv4.ip_forward=1
       - net.ipv4.conf.all.src_valid_mark=1
     networks:
-      traefik-internetwork:
+      traefik-swarm-network:
       wg-easy:
         ipv4_address: 10.8.1.2
-    labels:
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.role==worker
+      labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-internetwork"
       - "traefik.http.routers.wireguard-http.entrypoints=web"
@@ -67,3 +77,5 @@ services:
       - "traefik.http.routers.wireguard.rule=Host(`wireguard.mcbourdeux-workstation.com`)"
       - "traefik.http.routers.wireguard.tls=true"
       - "traefik.http.routers.wireguard.tls.certresolver=letsencrypt"
+      - "traefik.http.services.wireguard.loadbalancer.sticky.cookie=true"
+      - "traefik.http.services.wireguard.loadbalancer.sticky.cookie.name=wireguard_ha"
