@@ -27,7 +27,7 @@ services:
           - traefik.http.routers.thisproxylocal.middlewares=admin
       
           - traefik.http.services.thisproxytls.loadbalancer.server.port=8088
-          - traefik.http.routers.thisproxytls.rule=Host(`traefik.gxcaothai.net`) || Host(`traefik.mcbourdeux-workstation.com`)
+          - traefik.http.routers.thisproxytls.rule=Host(`traefik2.mcbourdeux-workstation.com`)
           - traefik.http.routers.thisproxytls.entrypoints=websecure
           - traefik.http.routers.thisproxytls.service=api@internal
           - traefik.http.routers.thisproxytls.middlewares=admin
@@ -77,7 +77,6 @@ services:
       placement:
         constraints:
           - node.role==worker
-          - node.labels.arch==arm64
       labels:
         - traefik.enable=true
         - traefik.docker.network=traefik-swarm-network
