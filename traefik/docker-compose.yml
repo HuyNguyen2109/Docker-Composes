@@ -8,7 +8,7 @@ services:
     ports:
       - 80:80
       - 443:443
-      - 8088:8088
+      - 51820:51820
     secrets:
       - cloudflare-api-key
       - cloudflare-email
