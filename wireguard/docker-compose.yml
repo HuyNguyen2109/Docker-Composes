@@ -12,8 +12,6 @@ networks:
 
 services:
   wireguard:
-    depends_on:
-      - pihole
     image: weejewel/wg-easy:latest
     container_name: wireguard
     restart: unless-stopped
