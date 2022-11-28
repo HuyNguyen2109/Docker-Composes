@@ -12,7 +12,8 @@ networks:
     ipam:
       config:
         - subnet: 10.8.1.0/24
-  
+
+services:
   wireguard:
     image: weejewel/wg-easy:latest
     secrets:
