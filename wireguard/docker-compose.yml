@@ -25,7 +25,6 @@ networks:
     volumes:
       - /datacenter2/docker/wireguard:/etc/wireguard
     ports:
-      - 51821:51821/tcp
       - 51820:51820/udp
     cap_add:
       - NET_ADMIN
