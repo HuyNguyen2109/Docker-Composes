@@ -1,0 +1,65 @@
+version: '3.1'
+
+services:
+  postgresql-master:
+    image: 'bitnami/postgresql:latest'
+    ports:
+      - '5432:5432'
+    secrets:
+      - postgres-root-user
+      - postgres-root-password
+      - postgres-repl-user
+    volumes:
+      - '/datacenter2/docker/postgres-master:/bitnami/postgresql'
+    networks:
+      - postgres-swarm-net
+    deploy:
+      placement:
+        constraints:
+          - node.role==manager
+    environment:
+      - POSTGRESQL_REPLICATION_MODE=master
+      - POSTGRESQL_REPLICATION_USER_FILE=/run/secrets/postgres-repl-user
+      - POSTGRESQL_REPLICATION_PASSWORD_FILE=/run/secrets/postgres-root-password
+      - POSTGRESQL_USERNAME_FILE=/run/secrets/postgres-root-user
+      - POSTGRESQL_PASSWORD_FILE=/run/secrets/postgres-root-password
+      - POSTGRESQL_DATABASE_FILE=/run/secrets/postgres-root-user
+  
+  postgresql-slave:
+    image: 'bitnami/postgresql:latest'
+    ports:
+      - '5432'
+    volumes:
+      - '/datacenter2/docker/postgres-slave:/bitnami/postgresql'
+    networks:
+      - postgres-swarm-net
+    depends_on:
+      - postgresql-master
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.role==worker
+    secrets:
+      - postgres-root-user
+      - postgres-root-password
+      - postgres-repl-user
+    environment:
+      - POSTGRESQL_REPLICATION_MODE=slave
+      - POSTGRESQL_REPLICATION_USER=/run/secrets/postgres-repl-user
+      - POSTGRESQL_REPLICATION_PASSWORD=/run/secrets/postgres-root-password
+      - POSTGRESQL_MASTER_HOST=postgresql-master
+      - POSTGRESQL_PASSWORD=/run/secrets/postgres-root-password
+      - POSTGRESQL_MASTER_PORT_NUMBER=5432
+
+networks:
+  postgres-swarm-net:
+    external: true
+
+secrets:
+  postgres-root-user:
+    external: true
+  postgres-root-password:
+    external: true
+  postgres-repl-user:
+    external: true
