@@ -1,0 +1,40 @@
+version: '3.6'
+services:
+  web:
+    image: 'gitlab/gitlab-ce:latest'
+    restart: always
+    networks:
+      - traefik-internetwork
+      - postgres-net
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://gitlab.mcbourdeux-workstation.com'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2224
+        nginx['listen_https'] = false
+        nginx['listen_port'] = 80
+    ports:
+      - '2224:22'
+    volumes:
+      - '/datacenter/docker/gitlab/config:/etc/gitlab'
+      - '/datacenter/docker/gitlab/logs:/var/log/gitlab'
+      - '/datacenter/docker/gitlab/data:/var/opt/gitlab'
+    shm_size: '256m'
+    lebels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gitlab-app.entrypoints=web"
+      - "traefik.http.routers.gitlab-app.rule=Host(`gitlab.mcbourdeux-workstation.com`)"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.gitlab-app.middlewares=https-redirect"
+      - "traefik.http.routers.gitlab-app-secure.entrypoints=websecure"
+      - "traefik.http.routers.gitlab-app-secure.rule=Host(`gitlab.mcbourdeux-workstation.com`)"
+      - "traefik.http.routers.gitlab-app-secure.tls=true"
+      - "traefik.http.routers.gitlab-app-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.gitlab-app-secure.service=gitlab"
+      - "traefik.http.services.gitlab.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik-internetwork"
+
+networks:
+  traefik-internetwork:
+    external: true
+  postgres-net:
+    external: true
