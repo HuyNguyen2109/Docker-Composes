@@ -14,12 +14,18 @@ services:
         # Frontend
         - traefik.enable=true
         - traefik.docker.network=traefik-swarm-network
-        - traefik.http.routers.code-server.rule=Host(`code-server.mcbourdeux-workstation.com`)
-        - traefik.http.routers.code-server.entrypoints=websecure
-        - traefik.http.routers.code-server.tls.certresolver=letsencrypt
-        - traefik.http.services.code-server.loadbalancer.server.port=8443
-        - traefik.http.services.code-server.loadbalancer.sticky.cookie=true
-        - traefik.http.services.code-server.loadbalancer.sticky.cookie.name=code_server_ha
+        - "traefik.http.routers.code-server-http.entrypoints=web"
+        - "traefik.http.routers.code-server-http.rule=Host(`code-server.mcbourdeux-workstation.com`)"
+        - "traefik.http.routers.code-server-http.middlewares=code-server-https"
+        - "traefik.http.routers.code-server-http.service=code-server"
+        - "traefik.http.services.code-server.loadbalancer.server.port=51821"
+        - "traefik.http.middlewares.code-server-https.redirectscheme.scheme=https"
+        - "traefik.http.routers.code-server.entrypoints=websecure"
+        - "traefik.http.routers.code-server.rule=Host(`code-server.mcbourdeux-workstation.com`)"
+        - "traefik.http.routers.code-server.tls=true"
+        - "traefik.http.routers.code-server.tls.certresolver=letsencrypt"
+        - "traefik.http.services.code-server.loadbalancer.sticky.cookie=true"
+        - "traefik.http.services.code-server.loadbalancer.sticky.cookie.name=code-server_ha"
     environment:
       - PUID=1000
       - PGID=1000
