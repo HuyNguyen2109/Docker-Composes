@@ -19,21 +19,23 @@ services:
       - 3000:3000
       - 10443:10443
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=traefik-swarm-network"
-      - "traefik.http.routers.kasm-http.entrypoints=web"
-      - "traefik.http.routers.kasm-http.rule=Host(`138.2.67.204`)"
-      - "traefik.http.routers.kasm-http.middlewares=kasm-https"
-      - "traefik.http.routers.kasm-http.service=kasm"
-      - "traefik.http.services.kasm.loadbalancer.server.port=10443"
-      - "traefik.http.middlewares.kasm-https.redirectscheme.scheme=https"
-      - "traefik.http.routers.kasm.entrypoints=websecure"
-      - "traefik.http.routers.kasm.rule=Host(`kasm.mcbourdeux-workstation.com`)"
-      - "traefik.http.routers.kasm.tls=true"
-      - "traefik.http.routers.kasm.tls.certresolver=letsencrypt"
-      - "traefik.http.services.kasm.loadbalancer.sticky.cookie=true"
-      - "traefik.http.services.kasm.loadbalancer.sticky.cookie.name=kasm_ha"
+    deploy:
+      mode: global
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-swarm-network"
+        - "traefik.http.routers.kasm-http.entrypoints=web"
+        - "traefik.http.routers.kasm-http.rule=Host(`138.2.67.204`)"
+        - "traefik.http.routers.kasm-http.middlewares=kasm-https"
+        - "traefik.http.routers.kasm-http.service=kasm"
+        - "traefik.http.services.kasm.loadbalancer.server.port=10443"
+        - "traefik.http.middlewares.kasm-https.redirectscheme.scheme=https"
+        - "traefik.http.routers.kasm.entrypoints=websecure"
+        - "traefik.http.routers.kasm.rule=Host(`kasm.mcbourdeux-workstation.com`)"
+        - "traefik.http.routers.kasm.tls=true"
+        - "traefik.http.routers.kasm.tls.certresolver=letsencrypt"
+        - "traefik.http.services.kasm.loadbalancer.sticky.cookie=true"
+        - "traefik.http.services.kasm.loadbalancer.sticky.cookie.name=kasm_ha"
 
 networks:
   traefik-swarm-network:
