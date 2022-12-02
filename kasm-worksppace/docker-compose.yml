@@ -1,28 +1,29 @@
-version: "3"
+version: "3.1"
+
 services:
   kasm:
-    image: linuxserver/kasm:1.11.0-develop
+    image: linuxserver/kasm:latest
     container_name: kasm
     privileged: true
     networks:
-      - traefik-internetwork
+      - traefik-swarm-network
     environment:
       - KASM_PORT=10443
       - TZ=Asia/Ho_Chi_Minh
       - DOCKER_HUB_USERNAME=${DOCKER_HUB_USER} #optional
       - DOCKER_HUB_PASSWORD=${DOCKER_HUB_PASSWORD} #optional
     volumes:
-      - /datacenter/docker/kasm/data:/opt
-      - /datacenter/docker/kasm/profiles:/profiles #optional
+      - /datacenter2/docker/kasm/data:/opt
+      - /datacenter2/docker/kasm/profiles:/profiles #optional
     ports:
       - 3000:3000
       - 10443:10443
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=traefik-internetwork"
+      - "traefik.docker.network=traefik-swarm-network"
       - "traefik.http.routers.kasm-http.entrypoints=web"
-      - "traefik.http.routers.kasm-http.rule=Host(`152.69.211.33`)"
+      - "traefik.http.routers.kasm-http.rule=Host(`138.2.67.204`)"
       - "traefik.http.routers.kasm-http.middlewares=kasm-https"
       - "traefik.http.routers.kasm-http.service=kasm"
       - "traefik.http.services.kasm.loadbalancer.server.port=10443"
@@ -31,7 +32,9 @@ services:
       - "traefik.http.routers.kasm.rule=Host(`kasm.mcbourdeux-workstation.com`)"
       - "traefik.http.routers.kasm.tls=true"
       - "traefik.http.routers.kasm.tls.certresolver=letsencrypt"
+      - "traefik.http.services.kasm.loadbalancer.sticky.cookie=true"
+      - "traefik.http.services.kasm.loadbalancer.sticky.cookie.name=kasm_ha"
 
 networks:
-  traefik-internetwork:
+  traefik-swarm-network:
     external: true
