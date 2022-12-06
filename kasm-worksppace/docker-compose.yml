@@ -5,12 +5,12 @@ services:
     image: linuxserver/kasm:latest
     networks:
       - traefik-swarm-network
+    cap_add: ALL
     environment:
       - KASM_PORT=10443
       - TZ=Asia/Ho_Chi_Minh
       - DOCKER_HUB_USERNAME=${DOCKER_HUB_USER} #optional
       - DOCKER_HUB_PASSWORD=${DOCKER_HUB_PASSWORD} #optional
-      - UMASK=777
     volumes:
       - /datacenter2/docker/kasm/data:/opt
       - /datacenter2/docker/kasm/profiles:/profiles #optional
