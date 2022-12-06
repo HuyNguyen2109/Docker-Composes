@@ -19,7 +19,6 @@ services:
     ports:
       - 3000:3000
       - 10443:10443
-    restart: unless-stopped
     deploy:
       mode: global
       labels:
