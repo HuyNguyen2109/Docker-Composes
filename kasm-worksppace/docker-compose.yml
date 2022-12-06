@@ -5,7 +5,8 @@ services:
     image: linuxserver/kasm:latest
     networks:
       - traefik-swarm-network
-    cap_add: ALL
+    cap_add: 
+      - ALL
     environment:
       - KASM_PORT=10443
       - TZ=Asia/Ho_Chi_Minh
