@@ -3,8 +3,6 @@ version: "3.1"
 services:
   kasm:
     image: linuxserver/kasm:latest
-    container_name: kasm
-    privileged: true
     networks:
       - traefik-swarm-network
     environment:
@@ -16,6 +14,7 @@ services:
     volumes:
       - /datacenter2/docker/kasm/data:/opt
       - /datacenter2/docker/kasm/profiles:/profiles #optional
+      - /lib/modules:/lib/modules
     ports:
       - 3000:3000
       - 10443:10443
