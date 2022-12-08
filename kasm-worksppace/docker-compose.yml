@@ -21,6 +21,9 @@ services:
       - 10443:10443
     deploy:
       mode: global
+      placement:
+        constraints:
+          - node.role == worker
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=traefik-swarm-network"
