@@ -1,4 +1,4 @@
-version: "3.1"
+version: "3.7"
 
 services:
   kasm:
@@ -7,7 +7,6 @@ services:
       - traefik-swarm-network
     cap_add: 
       - ALL
-      - SYS_ADMIN
     environment:
       - TZ=Asia/Ho_Chi_Minh
       - DOCKER_HUB_USERNAME=${DOCKER_HUB_USER} #optional
