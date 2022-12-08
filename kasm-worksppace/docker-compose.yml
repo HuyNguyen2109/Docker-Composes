@@ -8,7 +8,6 @@ services:
     cap_add: 
       - ALL
     environment:
-      - KASM_PORT=10443
       - TZ=Asia/Ho_Chi_Minh
       - DOCKER_HUB_USERNAME=${DOCKER_HUB_USER} #optional
       - DOCKER_HUB_PASSWORD=${DOCKER_HUB_PASSWORD} #optional
@@ -18,7 +17,6 @@ services:
       - /lib/modules:/lib/modules
     ports:
       - 3000:3000
-      - 10443:10443
     deploy:
       mode: global
       placement:
@@ -27,13 +25,9 @@ services:
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=traefik-swarm-network"
-        - "traefik.http.routers.kasm-http.entrypoints=web"
-        - "traefik.http.routers.kasm-http.rule=Host(`138.2.67.204`)"
-        - "traefik.http.routers.kasm-http.middlewares=kasm-https"
-        - "traefik.http.routers.kasm-http.service=kasm"
-        - "traefik.http.services.kasm.loadbalancer.server.port=10443"
-        - "traefik.http.middlewares.kasm-https.redirectscheme.scheme=https"
         - "traefik.http.routers.kasm.entrypoints=websecure"
+        - "traefik.http.services.kasm.loadbalancer.server.port=443"
+        - "traefik.http.services.kasm.loadbalancer.server.scheme=https"
         - "traefik.http.routers.kasm.rule=Host(`kasm.mcbourdeux-workstation.com`)"
         - "traefik.http.routers.kasm.tls=true"
         - "traefik.http.routers.kasm.tls.certresolver=letsencrypt"
