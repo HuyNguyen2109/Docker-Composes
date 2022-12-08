@@ -12,8 +12,8 @@ services:
       - DOCKER_HUB_USERNAME=${DOCKER_HUB_USER} #optional
       - DOCKER_HUB_PASSWORD=${DOCKER_HUB_PASSWORD} #optional
     volumes:
-      - /datacenter2/docker/kasm/data:/opt
-      - /datacenter2/docker/kasm/profiles:/profiles #optional
+      - /datacenter/docker/kasm/data:/opt
+      - /datacenter/docker/kasm/profiles:/profiles #optional
       - /lib/modules:/lib/modules
     ports:
       - 3000:3000
@@ -21,7 +21,7 @@ services:
       mode: global
       placement:
         constraints:
-          - node.role == worker
+          - node.role == manager
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=traefik-swarm-network"
