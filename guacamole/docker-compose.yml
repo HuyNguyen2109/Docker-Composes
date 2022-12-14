@@ -13,6 +13,7 @@ services:
     
   guacamole-client:
     image: guacamole/guacamole
+    restart: unless-stopped
     depends_on:
       - guacd
     container_name: guacamole-client
