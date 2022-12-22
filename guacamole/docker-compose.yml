@@ -17,6 +17,8 @@ services:
     depends_on:
       - guacd
     container_name: guacamole-client
+    volumes:
+      - /datacenter2/docker/guacamole:/guacamole
     environment:
       - POSTGRES_HOSTNAME=postgres
       - POSTGRES_DATABASE=${DB}
@@ -24,6 +26,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - GUACD_HOSTNAME=guacd
       - GUACD_PORT=4822
+      - GUACAMOLE_HOME=/guacamole
     networks:
       - postgres-net
       - guacamole-remote-net
