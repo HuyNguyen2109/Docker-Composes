@@ -40,7 +40,7 @@ services:
       - traefik.enable=true
       - traefik.http.middlewares.admin.basicauth.users=$TRAEFIK_USER:$TRAEFIK_PASSWORD
       
-      - traefik.http.routers.thisproxylocal.rule=Host(`152.69.211.33`)
+      - traefik.http.routers.thisproxylocal.rule=Host(`100.102.208.109`)
       - traefik.http.routers.thisproxylocal.entryPoints=console
       - traefik.http.routers.thisproxylocal.service=api@internal
       - traefik.http.routers.thisproxylocal.middlewares=admin
