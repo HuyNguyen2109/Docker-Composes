@@ -20,7 +20,7 @@ services:
           - traefik.http.middlewares.admin.basicauth.users=admin:{SHA}21PspRSCShmulruE2XnUaON2Prc=
           - traefik.docker.network=traefik-swarm-network
       
-          - traefik.http.routers.thisproxylocal.rule=Host(`10.0.0.172`)
+          - traefik.http.routers.thisproxylocal.rule=Host(`100.64.185.91`)
           - traefik.http.routers.thisproxylocal.entryPoints=console
           - traefik.http.routers.thisproxylocal.service=api@internal
           - traefik.http.routers.thisproxylocal.middlewares=admin
