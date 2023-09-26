@@ -1,0 +1,18 @@
+version: '2'
+services:
+  openvpn:
+    cap_add:
+     - NET_ADMIN
+    image: kylemanna/openvpn
+    container_name: openvpn
+    ports:
+     - "1194:1194/udp"
+    restart: always
+    networks:
+     - vpn_network
+    volumes:
+     - /home/opc/docker/ovpn:/etc/openvpn
+
+networks:
+  vpn_network:
+    external: true
