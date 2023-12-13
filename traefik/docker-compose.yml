@@ -18,16 +18,16 @@ services:
           - node.role==manager
       labels:
           - traefik.enable=true
-          - traefik.http.middlewares.admin.basicauth.users=admin:{SHA}21PspRSCShmulruE2XnUaON2Prc=
+          - traefik.http.middlewares.admin.basicauth.users=${TRAEFIK_ADMIN_CREDENTIALS}
           - traefik.docker.network=traefik-swarm-network
       
-          - traefik.http.routers.thisproxylocal.rule=Host(`100.64.185.91`)
+          - traefik.http.routers.thisproxylocal.rule=Host(`${HOST_IP}`)
           - traefik.http.routers.thisproxylocal.entryPoints=console
           - traefik.http.routers.thisproxylocal.service=api@internal
           - traefik.http.routers.thisproxylocal.middlewares=admin
       
           - traefik.http.services.thisproxytls.loadbalancer.server.port=8088
-          - traefik.http.routers.thisproxytls.rule=Host(`traefik2.mcbourdeux-workstation.com`)
+          - traefik.http.routers.thisproxytls.rule=Host(`${ROOT_DOMAIN}`) && Path(`/traefik-proxy`)
           - traefik.http.routers.thisproxytls.entrypoints=websecure
           - traefik.http.routers.thisproxytls.service=api@internal
           - traefik.http.routers.thisproxytls.middlewares=admin
@@ -79,7 +79,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.docker.network=traefik-swarm-network
-        - traefik.http.routers.whoami.rule=Host(`test.mcbourdeux-workstation.com`)  
+        - traefik.http.routers.whoami.rule=Host(`${ROOT_DOMAIN}`) && Path(`/health-check`)
         - traefik.http.routers.whoami.entrypoints=websecure
         - traefik.http.routers.whoami.tls.certresolver=letsencrypt
         - traefik.http.services.whoami.loadbalancer.server.port=80
@@ -97,8 +97,4 @@ secrets:
   cloudflare-api-key:
     external: true
   cloudflare-email:
-    external: true
-  traefik-password:
-    external: true
-  traefik-user:
     external: true
