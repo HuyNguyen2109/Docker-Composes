@@ -58,16 +58,17 @@ services:
       - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
-      - --certificatesresolvers.letsencrypt.acme.email=JohnasHuy21091996@gmail.com  # replace with your email
+      - --certificatesresolvers.letsencrypt.acme.email=clouflare-email  # replace with your email
       - --certificatesresolvers.letsencrypt.acme.storage=acme/acme.json
       - --certificatesresolvers.letsencrypt.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /datacenter2/docker/traefik/acme:/acme
-      - /datacenter2/docker/traefik/logs:/logs
+      - traefik-acme:/acme
+      - traefik-logs:/logs
     environment:
       - CF_API_EMAIL=clouflare-email
       - CF_API_KEY=cloudflare-api-key
+      - TZ=Asia/Ho_Chi_Minh
     
   whoami:
     image: "traefik/whoami"
@@ -98,3 +99,7 @@ secrets:
     external: true
   cloudflare-email:
     external: true
+
+volumes:
+  traefik-acme:
+  traefik-logs:
