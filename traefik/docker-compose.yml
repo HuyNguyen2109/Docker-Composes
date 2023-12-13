@@ -101,4 +101,6 @@ secrets:
 
 volumes:
   traefik-acme:
+    name: traefik-acme
   traefik-logs:
+    name: traefik-logs
