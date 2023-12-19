@@ -27,7 +27,7 @@ services:
           - traefik.http.routers.thisproxylocal.middlewares=admin
       
           - traefik.http.services.thisproxytls.loadbalancer.server.port=8088
-          - traefik.http.routers.thisproxytls.rule=Host(`portainer.${ROOT_DOMAIN}`)
+          - traefik.http.routers.thisproxytls.rule=Host(`traefik.${ROOT_DOMAIN}`)
           - traefik.http.routers.thisproxytls.entrypoints=websecure
           - traefik.http.routers.thisproxytls.service=api@internal
           - traefik.http.routers.thisproxytls.middlewares=admin
