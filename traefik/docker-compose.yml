@@ -21,13 +21,13 @@ services:
           - traefik.http.middlewares.admin.basicauth.users=${TRAEFIK_ADMIN_CREDENTIALS}
           - traefik.docker.network=traefik-swarm-network
       
-          - traefik.http.routers.thisproxylocal.rule=Host(`${ROOT_DOMAIN}`) && PathPrefix(`/traefik-proxy`)
+          - traefik.http.routers.thisproxylocal.rule=Host(`${HOST_IP}`)
           - traefik.http.routers.thisproxylocal.entryPoints=console
           - traefik.http.routers.thisproxylocal.service=api@internal
           - traefik.http.routers.thisproxylocal.middlewares=admin
       
           - traefik.http.services.thisproxytls.loadbalancer.server.port=8088
-          - traefik.http.routers.thisproxytls.rule=Host(`${ROOT_DOMAIN}`) && PathPrefix(`/traefik-proxy`)
+          - traefik.http.routers.thisproxytls.rule=Host(`portainer.${ROOT_DOMAIN}`)
           - traefik.http.routers.thisproxytls.entrypoints=websecure
           - traefik.http.routers.thisproxytls.service=api@internal
           - traefik.http.routers.thisproxytls.middlewares=admin
