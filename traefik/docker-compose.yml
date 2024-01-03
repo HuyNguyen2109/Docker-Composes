@@ -36,6 +36,8 @@ services:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --providers.swarm.endpoint=unix:///var/run/docker.sock
+      - --providers.swarm.tls.cert=/etc/certs/traefik.cert
+      - --providers.swarm.tls.key=/etc/certs/traefik.key
       - --providers.docker.network=traefik-swarm-network
       
       - --entryPoints.console.address=:8088
@@ -64,6 +66,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik-acme:/acme
       - traefik-logs:/logs
+      - traefik-certs:/etc/certs
     environment:
       - CF_API_EMAIL=clouflare-email
       - CF_API_KEY=cloudflare-api-key
@@ -103,4 +106,6 @@ volumes:
   traefik-acme:
     external: true
   traefik-logs:
+    external: true
+  traefik-certs:
     external: true
