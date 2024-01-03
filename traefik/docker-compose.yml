@@ -64,7 +64,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik-acme:/acme
       - traefik-logs:/logs
-      - traefik-certs:/etc/certs
     environment:
       - CF_API_EMAIL=clouflare-email
       - CF_API_KEY=cloudflare-api-key
