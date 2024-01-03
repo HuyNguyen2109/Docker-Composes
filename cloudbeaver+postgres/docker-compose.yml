@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+  postgres:
+    image: bitnami/postgresql
+    container_name: bitnami-posgresql
+    restart: unless-stopped
+    hostname: 'postgres'
+    networks:
+      - postgres-net
+    ports:
+      - 5432:5432
+    expose:
+      - 5432
+    volumes:
+      - /datacenter/docker/postgres/data:/bitnami/postgresql/data
+      - /datacenter/docker/postgres/conf:/bitnami/postgresql/conf
+    environment:
+      - POSTGRESQL_PASSWORD=${ROOT_PASSWORD}
+
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: cloudbeaver
+    restart: unless-stopped
+    networks:
+      - postgres-net
+      - traefik-internetwork
+    volumes:
+      - /datacenter/docker/cloudbeaver:/opt/cloudbeaver/workspace
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cloudbeaver-app.entrypoints=web"
+      - "traefik.http.routers.cloudbeaver-app.rule=Host(`cloudbeaver.mcbourdeux-workstation.com`)"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.cloudbeaver-app.middlewares=https-redirect"
+      - "traefik.http.routers.cloudbeaver-app-secure.entrypoints=websecure"
+      - "traefik.http.routers.cloudbeaver-app-secure.rule=Host(`cloudbeaver.mcbourdeux-workstation.com`)"
+      - "traefik.http.routers.cloudbeaver-app-secure.tls=true"
+      - "traefik.http.routers.cloudbeaver-app-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.cloudbeaver-app-secure.service=cloudbeaver"
+      - "traefik.http.services.cloudbeaver.loadbalancer.server.port=8978"
+      - "traefik.docker.network=traefik-internetwork"
+
+networks:
+  traefik-internetwork:
+    external: true
+  postgres-net:
+    external: true

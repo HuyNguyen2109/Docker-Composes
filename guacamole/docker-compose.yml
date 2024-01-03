@@ -1,0 +1,50 @@
+version: "3.1"
+
+services:
+  guacd:
+    image: guacamole/guacd
+    container_name: guacd
+    hostname: guacd
+    expose:
+      - 4822
+    restart: unless-stopped
+    networks:
+      - guacamole-remote-net
+    
+  guacamole-client:
+    image: guacamole/guacamole
+    depends_on:
+      - guacd
+    container_name: guacamole-client
+    environment:
+      - POSTGRES_HOSTNAME=postgres
+      - POSTGRES_DATABASE=${DB}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - GUACD_HOSTNAME=guacd
+      - GUACD_PORT=4822
+    networks:
+      - postgres-net
+      - guacamole-remote-net
+      - traefik-internetwork
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.guacamole-app.entrypoints=web"
+      - "traefik.http.routers.guacamole-app.rule=Host(`remote-server.mcbourdeux-workstation.com`)"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.guacamole-app.middlewares=https-redirect"
+      - "traefik.http.routers.guacamole-app-secure.entrypoints=websecure"
+      - "traefik.http.routers.guacamole-app-secure.rule=Host(`remote-server.mcbourdeux-workstation.com`)"
+      - "traefik.http.routers.guacamole-app-secure.tls=true"
+      - "traefik.http.routers.guacamole-app-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.guacamole-app-secure.service=guacamole"
+      - "traefik.http.services.guacamole.loadbalancer.server.port=8080"
+      - "traefik.docker.network=traefik-internetwork"
+
+networks:
+  guacamole-remote-net:
+    external: true
+  postgres-net:
+    external: true
+  traefik-internetwork:
+    external: true
