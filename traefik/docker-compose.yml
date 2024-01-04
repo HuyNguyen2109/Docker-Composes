@@ -33,18 +33,19 @@ services:
           - traefik.http.routers.thisproxytls.middlewares=admin
           - traefik.http.routers.thisproxytls.tls.certresolver=letsencrypt
     command:
+      # For docker configuration
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --providers.swarm.endpoint=unix:///var/run/docker.sock
       - --providers.docker.network=traefik-swarm-network
-      
+      # Enable entryPoints
       - --entryPoints.console.address=:8088
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
       - --entryPoints.web.http.redirections.entryPoint.to=websecure
       - --entryPoints.web.http.redirections.entryPoint.scheme=https
       - --entryPoints.web.http.redirections.entrypoint.permanent=true
-      
+      # Enable dashboard
       - --api=true
       - --api.insecure=true
       - --global.checkNewVersion=true
@@ -53,7 +54,7 @@ services:
       - --log.filePath=/logs/traefik.log
       - --accessLog.filePath=/logs/access.log
       - --accessLog.bufferingSize=100
-      
+      # Certificates
       - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
