@@ -1,0 +1,63 @@
+version: '3.8'
+
+volumes:
+  mariadb-data:
+    external: true
+
+secrets:
+  mariadb-root-password:
+    external: true
+
+networks:
+  db-swarm-network:
+    external: true
+
+services:
+  mariadb:
+    image: jc21/mariadb-aria:latest
+    environment:
+      MYSQL_ROOT_PASSWORD__FILE: /run/secrets/mariadb-root-password
+      MYSQL_DATABASE: 'npm'
+      MYSQL_USER: 'npm'
+      MYSQL_PASSWORD__FILE: /run/secretsmariadb-root-password
+      TZ: Asia/Ho_Chi_Minh
+    networks:
+      - db-swarm-network
+    secrets
+      - mariadb-root-password
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+  mysql-cron-backup:
+    image: fradelg/mysql-cron-backup
+    depends_on:
+      - mariadb
+    volumes:
+      - /datacenter/external-datastore/mnt/mariadb-backups:/backup
+    networks:
+      - db-swarm-network
+    secrets:
+      - mariadb-root-password
+    environment:
+      MYSQL_HOST: mariadb
+      MYSQL_USER: root
+      MYSQL_PASS_FILE: /run/secrets/mariadb-root-password
+      MAX_BACKUPS: 15
+      INIT_BACKUP: 1
+      GZIP_LEVEL: 8
+      TZ: Asia/Ho_Chi_Minh
+      MYSQLDUMP_OPTS: --no-tablespaces
+      TIMEOUT: 20s
+      CRON_TIME: 0 3 * * *
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
