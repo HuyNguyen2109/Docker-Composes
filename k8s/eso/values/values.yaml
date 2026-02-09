@@ -1,4 +1,8 @@
 installCRDs: true
-nodeSelector:
-  topology.kubernetes.io/region: sg-prod-01
-  node.kubernetes.io/worker: 'true'
+replicaCount: 2
+leaderElect: true
+global:
+  nodeSelector:
+    node.kubernetes.io/worker: 'true'
+cert-manager:
+  enabled: true
