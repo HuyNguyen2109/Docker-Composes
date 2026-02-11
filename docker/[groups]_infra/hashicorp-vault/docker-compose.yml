@@ -29,8 +29,8 @@ services:
         delay: 5s
         failure_action: rollback
         max_failure_ratio: 0.5
-      # restart_policy:
-        # condition: on-failure
+      restart_policy:
+        condition: any
       placement:
         constraints:
           - node.platform.os == linux
