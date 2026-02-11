@@ -1,0 +1,54 @@
+groups:
+  - name: system_resources
+    rules:
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage (instance {{ $labels.instance }})"
+          description: "Memory usage is above 80%\n  VALUE = {{ $value }}%\n  LABELS: {{ $labels }}"
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 50
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage (instance {{ $labels.instance }})"
+          description: "CPU usage is above 50%\n  VALUE = {{ $value }}%\n  LABELS: {{ $labels }}"
+
+  - name: docker_swarm
+    rules:
+      - alert: HighDockerServiceMemoryUsage
+        expr: |
+          (
+            sum by (container_label_com_docker_swarm_service_name, instance) (
+            container_memory_usage_bytes{container_label_com_docker_swarm_service_name!=""}
+          )
+          /
+          ignoring(container_label_com_docker_swarm_service_name)
+          group_left
+          sum by (instance) (
+            node_memory_MemTotal_bytes
+          )
+          ) * 100 > 20
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage in Docker service (service {{ $labels.container_label_com_docker_swarm_service_name }})"
+          description: "Service is using more than 20% of system memory\n  VALUE = {{ $value }}%\n  LABELS: {{ $labels.container_label_com_docker_swarm_service_name }}"
+
+      - alert: HighDockerServiceCPUUsage
+        expr: |
+          rate(
+            container_cpu_usage_seconds_total{container_label_com_docker_swarm_service_name!=""}[5m]
+          ) * on(instance) group_left count(node_cpu_seconds_total{mode="system"}) by (instance) * 100 > 50
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage in Docker service (service {{ $labels.container_label_com_docker_swarm_service_name }})"
+          description: "Service is using more than 50% of system CPU\n  VALUE = {{ $value }}%\n  LABELS: {{ $labels.container_label_com_docker_swarm_service_name }}"

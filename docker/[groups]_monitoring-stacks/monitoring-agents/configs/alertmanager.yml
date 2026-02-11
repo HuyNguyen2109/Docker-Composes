@@ -1,0 +1,30 @@
+global:
+  resolve_timeout: 5m
+  telegram_api_url: "https://api.telegram.org"
+
+templates:
+  - /alertmanager/templates/telegram.tmpl
+
+route:
+  group_by: ['alertname', 'instance', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 5m
+  receiver: 'telegram-alert-bot'
+
+receivers:
+  - name: 'telegram-alert-bot'
+    telegram_configs:
+      - bot_token: '{{ TELEGRAM_BOT_TOKEN }}'
+        send_resolved: true
+        chat_id: {{ TELEGRAM_CHAT_ID }}
+        message_thread_id: {{ TELEGRAM_MESSAGE_THREAD_ID }}
+        parse_mode: 'HTML'
+        message: '{{ template "telegram.message". }}' 
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']

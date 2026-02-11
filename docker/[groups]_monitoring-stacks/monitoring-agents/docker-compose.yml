@@ -1,18 +1,45 @@
 services:
+  alertmanager:
+    image: prom/alertmanager:${ALERTMANAGER_IMAGE_TAG}
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--cluster.listen-address=0.0.0.0:9094'
+      - '--cluster.peer=alertmanager:9094'
+      - '--cluster.gossip-interval=200ms'
+      - '--cluster.pushpull-interval=1m'
+      - '--web.external-url=http://alertmanager:9093'
+    networks:
+      - traefik-internetwork
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 5s
+      update_config:
+        parallelism: 1
+        delay: 10s
+      placement:
+        constraints:
+          - node.platform.os == linux
+          - node.role == manager
+    configs:
+      - source: alertmanager-conf
+        target: /etc/alertmanager/alertmanager.yml
+      - source: telegram-tmpl
+        target: /alertmanager/templates/telegram.tmpl
+
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.52.0
+    image: gcr.io/cadvisor/cadvisor:${CADVISOR_IMAGE_TAG}
     deploy:
       mode: global  # Runs on every node
       restart_policy:
         condition: any
     networks:
-      - monitoring-internetwork
-    labels:
-      prometheus-job: "cadvisor"
-    ports:
-      - target: 8080
-        published: 9080
-        mode: host  # Exposes directly on the host network
+      monitoring-internetwork:
+        aliases:
+          - cadvisor
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "/:/rootfs:ro"
@@ -22,30 +49,28 @@ services:
     command: ["-docker_only"]
   
   node_exporter:
-    image: quay.io/prometheus/node-exporter:v1.9.1
+    image: quay.io/prometheus/node-exporter:${NODE_EXPORTER_IMAGE_TAG}
     command:
       - '--path.rootfs=/host'
     networks:
-      - monitoring-internetwork
+      monitoring-internetwork:
+        aliases:
+          - node-exporter
     deploy:
       mode: global
       restart_policy:
         condition: any
-      labels:
-        prometheus-job: "node-exporter"
-    ports:
-      - target: 9100
-        published: 9100
-        mode: host
     volumes:
       - '/:/host:ro,rslave'
 
   prometheus:
-    image: prom/prometheus:v3.4.1
+    image: prom/prometheus:${PROMETHEUS_IMAGE_TAG}
     user: root
     networks:
-      - monitoring-internetwork
-      - traefik-internetwork
+      monitoring-internetwork: {}
+      traefik-internetwork:
+        aliases:
+          - prometheus
     deploy:
       mode: replicated
       replicas: 1
@@ -54,12 +79,6 @@ services:
           - node.role == manager
       restart_policy:
         condition: any
-      labels:
-        traefik.enable: "true"
-        traefik.http.routers.prometheus.rule: "Host(`prometheus.${DOMAIN_NAME}`)"
-        traefik.http.routers.prometheus.entrypoints: "websecure"
-        traefik.http.routers.prometheus.tls.certresolver: letsencrypt
-        traefik.http.services.prometheus.loadbalancer.server.port: "9090"
     configs:
       - source: prometheus-conf
         target: /etc/prometheus/prometheus.yml
@@ -76,11 +95,12 @@ services:
       - '--web.console.templates=/usr/share/prometheus/consoles'
   
   grafana:
-    image: grafana/grafana-oss:main-ubuntu
+    image: grafana/grafana-oss:${GRAFANA_IMAGE_TAG}
     networks:
-      - traefik-internetwork
-      - monitoring-internetwork
-      - db-internetwork
+      db-internetwork: {}
+      traefik-internetwork:
+        aliases:
+          - grafana
     configs:
       - source: grafana-conf
         target: /etc/grafana/grafana.ini
@@ -107,25 +127,16 @@ services:
         constraints:
           - node.platform.os == linux
           - node.role == worker
-      labels:
-        # Label for Shepherd service for autoupdate
-        - "shepherd.enable=true"
-        - "service.autodeploy=true"
-        # Frontend
-        - "traefik.enable=true"
-        - "traefik.http.routers.grafana.rule=Host(`grafana.${DOMAIN_NAME}`)"
-        - "traefik.http.routers.grafana.entrypoints=websecure"
-        - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
-        - "traefik.http.services.grafana.loadbalancer.server.port=3000"
-        - "traefik.http.services.grafana.loadbalancer.sticky.cookie=true"
-        - "traefik.http.services.grafana.loadbalancer.sticky.cookie.name=grafana_ha"
+          - node.labels.codename == ${SWARM_NODE_CODENAME}
 
   uptime-kuma:
     image: louislam/uptime-kuma:latest
     networks:
-      - traefik-internetwork
-      - monitoring-internetwork
-      - db-internetwork
+      traefik-internetwork:
+        aliases:
+          - uptime-kuma
+      monitoring-internetwork: {}
+      db-internetwork: {}
     deploy:
       mode: replicated
       replicas: 1
@@ -135,12 +146,6 @@ services:
           - node.role == worker
       restart_policy:
         condition: any
-      labels:
-        traefik.enable: "true"
-        traefik.http.routers.uptime-kuma.rule: "Host(`uptime.${DOMAIN_NAME}`)"
-        traefik.http.routers.uptime-kuma.entrypoints: "websecure"
-        traefik.http.routers.uptime-kuma.tls.certresolver: letsencrypt
-        traefik.http.services.uptime-kuma.loadbalancer.server.port: "3001"
     volumes:
       - uptime_kuma_storage:/app/data
 
@@ -151,26 +156,18 @@ configs:
     external: true
   prometheus-rules:
     external: true
+  alertmanager-conf:
+    external: true
+  telegram-tmpl:
+    external: true
 
 volumes:
   prometheus-data:
     driver: local
-    driver_opts:
-      type: none
-      device: /mnt/seaweedfs/mount/prometheus/data
-      o: bind
   grafana_storage:
     driver: local
-    driver_opts:
-      type: none
-      device: /mnt/seaweedfs/mount/grafana
-      o: bind
   uptime_kuma_storage:
     driver: local
-    driver_opts:
-      type: none
-      device: /mnt/seaweedfs/mount/uptime-kuma
-      o: bind
 
 networks:
   monitoring-internetwork:
