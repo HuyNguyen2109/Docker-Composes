@@ -10,7 +10,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.labels.database == slave
+          - node.labels.codename == ${SWARM_NODE_CODENAME}
       resources:
         limits:
           cpus: '0.50'
@@ -18,14 +18,8 @@ services:
         reservations:
           cpus: '0.25'
           memory: 512M
-      labels:
-        - "traefik.enable=true"
-        - "traefik.tcp.routers.valkey.rule=HostSNI(`*`)"
-        - "traefik.tcp.routers.valkey.entrypoints=valkey-redis"
-        - "traefik.tcp.services.valkey.loadbalancer.server.port=6379"
     networks:
       - db-internetwork
-      - traefik-internetwork
     configs:
       - source: valkey-config
         target: /usr/local/etc/valkey/valkey.conf
