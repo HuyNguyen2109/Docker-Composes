@@ -4,6 +4,7 @@ services:
     networks:
       - traefik-internetwork
       - db-internetwork
+      - monitoring-internetwork
     volumes:
       - ubuntu-data:/var
       - ubuntu-packages:/usr
@@ -30,6 +31,8 @@ networks:
   traefik-internetwork:
     external: true
   db-internetwork:
+    external: true
+  monitoring-internetwork:
     external: true
 
 volumes:
