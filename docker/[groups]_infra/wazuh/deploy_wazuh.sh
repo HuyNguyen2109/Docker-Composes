@@ -9,7 +9,7 @@ STACK_NAME="wazuh-siem"
 CERTS_DIR="./config/wazuh_indexer_ssl_certs"
 # Special envs for generate/renew certs stack
 export UI_URL="siem.mcb-svc.work"
-export IMAGE_TAG="4.14.3-rc1"
+export IMAGE_TAG="4.14.3"
 export BASE_WAZUH_VERSION="4.14"
 export CERT_GEN_IMAGE_TAG="0.0.4"
 
