@@ -14,8 +14,8 @@ resources:
   limits:
     cpu: 200m
     memory: 400Mi
-nodeSelector:
-  node.cert-manager: "true"
+nodeSelector: {}
+  # node.cert-manager: "true"
 tolerations:
 - key: "CriticalAddonsOnly"
   value: "true"

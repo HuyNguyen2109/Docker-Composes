@@ -1,8 +1,24 @@
 installCRDs: true
-replicaCount: 2
+replicaCount: 3
 leaderElect: true
 global:
-  nodeSelector:
-    node.kubernetes.io/worker: 'true'
+  nodeSelector: {}
 cert-manager:
   enabled: true
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+livenessProbe:
+  enabled: true
+  spec:
+    timeoutSeconds: 5
+    periodSeconds: 10
+    failureThreshold: 5
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+    
