@@ -1,8 +1,9 @@
 ports:
   web:
-    redirection:
-      entryPoint:
-        to: websecure
+      http:
+        redirection:
+          entryPoint:
+            to: websecure
 
 ingressClass:
   enabled: true
@@ -34,13 +35,13 @@ updateStrategy:
     maxSurge: 1
 
 affinity:
- podAntiAffinity:
-   requiredDuringSchedulingIgnoredDuringExecution:
-     - labelSelector:
-         matchLabels:
-           app.kubernetes.io/name: '{{ template "traefik.name" . }}'
-           app.kubernetes.io/instance: '{{ .Release.Name }}-{{ include "traefik.namespace" . }}'
-       topologyKey: kubernetes.io/hostname
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: '{{ template "traefik.name" . }}'
+            app.kubernetes.io/instance: '{{ .Release.Name }}-{{ include "traefik.namespace" . }}'
+        topologyKey: kubernetes.io/hostname
 
 nodeSelector:
   node-role.kubernetes.io/control-plane: ""
@@ -51,3 +52,9 @@ tolerations:
 - key: "node-role.kubernetes.io/unschedulable"
   operator: "Exists"
   effect: "NoSchedule"
+
+service:
+  enabled: true
+  type: LoadBalancer
+  spec:
+    loadBalancerIP: 192.168.1.30

@@ -3,6 +3,12 @@ service:
     type: LoadBalancer
   manager:
     type: ClusterIP
+longhornManager:
+  log:
+    format: json
+longhornDriver:
+  log:
+    format: json
 longhornUI:
   replicas: 3
   affinity:
@@ -24,14 +30,13 @@ longhornUI:
   - key: "node-role.kubernetes.io/control-plane"
     operator: "Exists"
     effect: "NoSchedule"
-  nodeSelector:
-    node.cert-manager: "true"
+  nodeSelector: {}
 defaultSettings:
   defaultDataPath: "/var/lib/longhorn"
 enablePSP: false
 
 persistence:
-  defaultClassReplicaCount: 2
+  defaultClassReplicaCount: 3
 
 defaultBackupStore:
   backupTarget: "s3://longhorn@auto/"

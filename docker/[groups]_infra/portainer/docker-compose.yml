@@ -15,7 +15,7 @@ services:
           - node.platform.os == linux
 
   portainer:
-    image: portainer/portainer-ee:${IMAGE_TAG}
+    image: portainer/portainer-ce:${IMAGE_TAG}
     command: -H tcp://tasks.agent:9001 --tlsskipverify
     networks:
       - traefik-internetwork

@@ -1,4 +1,9 @@
-namespace: "cert-manager"
+namespace: "kube-system"
+
+global:
+  logLevel: 2
+  leaderElection:
+    namespace: "kube-system"
 
 crds:
   enabled: true
@@ -14,6 +19,7 @@ strategy:
       maxUnavailable: 1
 podDisruptionBudget:
   enabled: true
+  minAvailable: 1
 affinity:
   podAntiAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
