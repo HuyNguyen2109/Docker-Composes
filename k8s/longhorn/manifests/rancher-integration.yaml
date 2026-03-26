@@ -2,7 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: longhorn-prometheus-servicemonitor
-  namespace: longhorn-system
+  namespace: storageclass-system
   labels:
     name: longhorn-prometheus-servicemonitor
 spec:
@@ -11,6 +11,6 @@ spec:
       app: longhorn-manager
   namespaceSelector:
     matchNames:
-    - longhorn-system
+    - storageclass-system
   endpoints:
   - port: manager

@@ -1,6 +1,7 @@
 service:
   ui:
-    type: LoadBalancer
+    type: NodePort
+    nodePort: 30000
   manager:
     type: ClusterIP
 longhornManager:
@@ -33,12 +34,14 @@ longhornUI:
   nodeSelector: {}
 defaultSettings:
   defaultDataPath: "/var/lib/longhorn"
+  deletingConfirmationFlag: "true"
 enablePSP: false
 
 persistence:
   defaultClassReplicaCount: 3
+  dataEngine: v2
 
 defaultBackupStore:
   backupTarget: "s3://longhorn@auto/"
-  backupTargetCredentialSecret: "minio-secret-eso"
+  backupTargetCredentialSecret: "s3-secret-eso"
 

@@ -6,7 +6,7 @@ warn() { printf '\033[1;33m[WARN]\033[0m %s\n' "$*"; }
 # ----------------------
 # Define stack name (change this as needed)
 STACK_NAME="portainer-prd"
-
+export DOCKER_BASED_DIR="/mnt/docker-datastore/data"
 # === Parse command-line arguments ===
 SWARM_NODE_CODENAME=""
 
@@ -45,7 +45,7 @@ log "🎯 Deploying to node codename: $SWARM_NODE_CODENAME"
 # === Remove existing Docker services if it exists ===
 docker stack rm "$STACK_NAME" >/dev/null 2>&1 || true
 export UI_URL="docker-ui.mcb-svc.work"
-export IMAGE_TAG="2.37.0-alpine"
+export IMAGE_TAG="2.39.0-alpine"
 export SWARM_NODE_CODENAME=$SWARM_NODE_CODENAME
 # Deploy the stack
 docker stack deploy -c docker-compose.yml "$STACK_NAME" --detach

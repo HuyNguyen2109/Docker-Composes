@@ -14,37 +14,6 @@ services:
       - target: 443
         published: 443
         mode: host
-      - target: 8088
-        published: 8088
-        mode: host
-      - target: 9000
-        published: 9000
-        mode: host
-      - target: 9090
-        published: 9090
-        mode: host  
-      - target: 7080
-        published: 7080
-        mode: host
-      - target: 5432
-        published: 5432
-        mode: host
-      - target: 3000
-        published: 3000
-        mode: host
-      - target: 3001
-        published: 3001
-        mode: host
-      # Exposed ports for Wazuh SIEM
-      - target: 1514
-        published: 1514
-        mode: host
-      - target: 1515
-        published: 1515
-        mode: host
-      - target: 55000
-        published: 55000
-        mode: host
     deploy:
       mode: replicated
       replicas: 1
@@ -68,11 +37,11 @@ services:
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ${MASTER_DATA_FOLDER}/traefik/acme:/acme
-      - ${MASTER_DATA_FOLDER}/traefik/logs:/logs
-      - ${MASTER_DATA_FOLDER}/traefik/dynamic:/etc/traefik/dynamic
-      - ${MASTER_DATA_FOLDER}/traefik/traefik.yaml:/etc/traefik/traefik.yaml:ro
-      - ${MASTER_DATA_FOLDER}/traefik/.default-user.txt:/etc/traefik/default-user.txt:ro
+      - ${DOCKER_BASED_DIR}/traefik/acme:/acme
+      - ${DOCKER_BASED_DIR}/traefik/logs:/logs
+      - ${DOCKER_BASED_DIR}/traefik/dynamic:/etc/traefik/dynamic
+      - ${DOCKER_BASED_DIR}/traefik/traefik.yaml:/etc/traefik/traefik.yaml:ro
+      - ${DOCKER_BASED_DIR}/traefik/.default-user.txt:/etc/traefik/default-user.txt:ro
     environment:
       - CF_API_EMAIL=${CF_API_EMAIL}
       - CF_API_KEY=${CF_API_KEY}

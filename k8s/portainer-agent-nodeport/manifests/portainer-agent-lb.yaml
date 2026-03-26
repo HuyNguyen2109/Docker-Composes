@@ -28,7 +28,8 @@ metadata:
   name: portainer-agent
   namespace: portainer
 spec:
-  type: NodePort
+  type: LoadBalancer
+  loadBalancerIP: 192.168.1.32
   selector:
     app: portainer-agent
   ports:
@@ -43,7 +44,6 @@ metadata:
   name: portainer-agent-headless
   namespace: portainer
 spec:
-  clusterIP: None
   selector:
     app: portainer-agent
 ---
@@ -62,15 +62,9 @@ spec:
         app: portainer-agent
     spec:
       serviceAccountName: portainer-sa-clusteradmin
-      tolerations:
-      - key: "CriticalAddonsOnly"
-        value: "true"
-        effect: "NoExecute"
-      nodeSelector:
-        node-role.gateway: "true"
       containers:
       - name: portainer-agent
-        image: portainer/agent:2.27.8
+        image: portainer/agent:2.39.0
         imagePullPolicy: Always
         env:
         - name: LOG_LEVEL
@@ -84,4 +78,3 @@ spec:
         ports:
         - containerPort: 9001
           protocol: TCP
-

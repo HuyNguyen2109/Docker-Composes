@@ -17,11 +17,22 @@ services:
   portainer:
     image: portainer/portainer-ce:${IMAGE_TAG}
     command: -H tcp://tasks.agent:9001 --tlsskipverify
+    ports:
+        # UI
+      - published: 9000
+        target: 9000
+        protocol: tcp
+        mode: host
+        # Websocket
+      - published: 8000
+        target: 8000
+        protocol: tcp
+        mode: host
     networks:
       - traefik-internetwork
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - portainer-data:/data
+      - ${DOCKER_BASED_DIR}/portainer:/data
     deploy:
       restart_policy:
         condition: any
@@ -34,10 +45,6 @@ services:
       placement:
         constraints:
           - node.labels.codename == ${SWARM_NODE_CODENAME}
-
-volumes:
-  portainer-data:
-    driver: local
 
 networks:
   traefik-internetwork:
