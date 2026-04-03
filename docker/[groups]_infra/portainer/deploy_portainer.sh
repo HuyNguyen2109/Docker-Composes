@@ -44,9 +44,9 @@ log "🎯 Deploying to node codename: $SWARM_NODE_CODENAME"
 
 # === Remove existing Docker services if it exists ===
 docker stack rm "$STACK_NAME" >/dev/null 2>&1 || true
-export UI_URL="docker-ui.mcb-svc.work"
-export IMAGE_TAG="2.39.0-alpine"
-export SWARM_NODE_CODENAME=$SWARM_NODE_CODENAME
+export UI_URL="dashboard.mcb-homelab.com"
+export IMAGE_TAG="2.40.0-alpine"
+export SWARM_NODE_CODENAME="$SWARM_NODE_CODENAME"
 # Deploy the stack
 docker stack deploy -c docker-compose.yml "$STACK_NAME" --detach
 log "✅ Docker stack '$STACK_NAME' deployed successfully!"
