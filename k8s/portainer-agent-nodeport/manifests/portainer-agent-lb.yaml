@@ -44,6 +44,7 @@ metadata:
   name: portainer-agent-headless
   namespace: portainer
 spec:
+  clusterIP: None
   selector:
     app: portainer-agent
 ---
