@@ -1,7 +1,7 @@
 service:
   ui:
-    type: NodePort
-    nodePort: 30000
+    type: Rancher-Proxy
+    nodePort: null
   manager:
     type: ClusterIP
 longhornManager:
@@ -33,7 +33,7 @@ longhornUI:
     effect: "NoSchedule"
   nodeSelector: {}
 defaultSettings:
-  defaultDataPath: "/var/lib/longhorn"
+  defaultDataPath: "/dev/longhorn-v2-block"
   deletingConfirmationFlag: "true"
 enablePSP: false
 
