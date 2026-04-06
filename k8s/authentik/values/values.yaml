@@ -79,6 +79,13 @@ server:
     timeoutSeconds: 30
   readinessProbe:
     timeoutSeconds: 30
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 256Mi
   autoscaling:
     enabled: true
     minReplicas: 1
