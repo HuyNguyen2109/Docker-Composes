@@ -1,0 +1,61 @@
+replicaCount: 1
+
+# storage:
+#   enabled: true
+#   requests: 2Gi # Set a desired volume size for PVC.
+#   storageClass: longhorn
+
+extraArgs:
+  - --logtostderr
+  - --dbfilename=my-dump-{timestamp} # Only the filename without any file extensions.
+  - --snapshot_cron=0 * * * *        # Set a valid cron schedule.
+  - --cluster_mode=emulated
+  - --admin_port=6790
+  - --dir=s3://dragonflydb-backups/ # Set a valid S3 bucket URL.
+  - --s3_endpoint=s3-api.mcb-homelab.com # Set a valid S3 endpoint URL.
+  - --s3_use_https=true
+
+podSecurityContext:
+  fsGroup: 2000
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  seccompProfile:
+    type: RuntimeDefault
+
+service:
+  type: NodePort
+
+passwordFromSecret:
+  enable: true
+  existingSecret:
+    name: "dragonflydb-auth-eso"
+    key: "auth"
+
+envFrom:
+  - secretRef:
+      name: "dragonfly-s3-storage"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 1Gi
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: dragonfly
+          topologyKey: kubernetes.io/hostname
