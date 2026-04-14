@@ -68,10 +68,8 @@ done
 log "🔐 Fetching secrets from Vault..."
 export CF_API_EMAIL="JohnasHuy21091996@gmail.com"
 export CF_API_KEY=$(az keyvault secret show --vault-name "$AZURE_VAULT_NAME" --name "cloudflare-api-key" --query "value" -o tsv)
-export IMAGE_TAG="v3.6.9"
-export SWARM_NODE_CODENAME
-# Set your homelab LAN CIDR (adjust as needed)
-export HOMELAB_LAN_CIDR="${HOMELAB_LAN_CIDR:-192.168.1.0/24}"
+export IMAGE_TAG="v3.6.12"
+export SWARM_NODE_CODENAME="$SWARM_NODE_CODENAME"
 # Deploy the stack
 docker stack deploy -c docker-compose.yml "$STACK_NAME" --detach
 log "✅ Docker stack '$STACK_NAME' deployed successfully!"
