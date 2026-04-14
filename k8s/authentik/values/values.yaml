@@ -17,7 +17,7 @@ global:
           key: authentik-secret-key
     # Main Postgres Configuration
     - name: AUTHENTIK_POSTGRESQL__HOST
-      value: "lb.netbird.local"
+      value: "lb.internal"
     - name: AUTHENTIK_POSTGRESQL__PORT
       value: "6432"
     - name: AUTHENTIK_POSTGRESQL__USER
@@ -31,7 +31,7 @@ global:
           key: authentik-db-password
     # Read-replica Postgres Configuration
     - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST
-      value: "lb.netbird.local"
+      value: "lb.internal"
     - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PORT
       value: "6433"
     - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER
@@ -48,7 +48,7 @@ global:
     - name: AUTHENTIK_STORAGE__MEDIA__S3__REGION
       value: "auto"
     - name: AUTHENTIK_STORAGE__MEDIA__S3__ENDPOINT
-      value: "http://unraid.netbird.local:9000"
+      value: "https://s3-api.mcb-homelab.com"
     - name: AUTHENTIK_STORAGE__MEDIA__S3__BUCKET_NAME
       value: "authentik"
     - name: AUTHENTIK_STORAGE__MEDIA__S3__USE_SSL
