@@ -1,9 +1,9 @@
 replicaCount: 1
 
-# storage:
-#   enabled: true
-#   requests: 2Gi # Set a desired volume size for PVC.
-#   storageClass: longhorn
+storage:
+  enabled: true
+  requests: 2Gi # Set a desired volume size for PVC.
+  storageClass: longhorn
 
 extraArgs:
   - --logtostderr
