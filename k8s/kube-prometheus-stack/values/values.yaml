@@ -187,17 +187,17 @@ defaultRules:
     kubeApiserverBurnrate: true
     kubeApiserverHistogram: true
     kubeApiserverSlos: true
-    kubeControllerManager: true
+    kubeControllerManager: false  # disabled: metrics port bound to 127.0.0.1, unreachable from Prometheus
     kubelet: true
-    kubeProxy: true
+    kubeProxy: false              # disabled: metrics port bound to 127.0.0.1, unreachable from Prometheus
     kubePrometheusGeneral: true
     kubePrometheusNodeRecording: true
     kubernetesApps: true
     kubernetesResources: true
     kubernetesStorage: true
     kubernetesSystem: true
-    kubeSchedulerAlerting: true
-    kubeSchedulerRecording: true
+    kubeSchedulerAlerting: false  # disabled: metrics port bound to 127.0.0.1, unreachable from Prometheus
+    kubeSchedulerRecording: false # disabled: metrics port bound to 127.0.0.1, unreachable from Prometheus
     kubeStateMetrics: true
     network: true
     node: true
@@ -571,13 +571,28 @@ alertmanager:
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 12h
-      receiver: 'null'
+      receiver: 'telegram'
       routes:
       - receiver: 'null'
         matchers:
           - alertname = "Watchdog"
+      - receiver: 'telegram'
+        matchers:
+          - severity =~ "warning|critical"
     receivers:
     - name: 'null'
+    - name: 'telegram'
+      telegram_configs:
+      - bot_token_file: /etc/alertmanager/secrets/alertmanager-telegram-secret/bot_token
+        chat_id: -1003129190360
+        parse_mode: HTML
+        message: |-
+          {{ range .Alerts }}
+          <b>[{{ .Labels.severity | toUpper }}] {{ .Labels.alertname }}</b>
+          <b>Namespace:</b> {{ .Labels.namespace }}
+          <b>Summary:</b> {{ .Annotations.summary }}
+          <b>Description:</b> {{ .Annotations.description }}
+          {{ end }}
     templates:
     - '/etc/alertmanager/config/*.tmpl'
 
@@ -857,7 +872,7 @@ alertmanager:
 
     ## Additional labels
     ##
-    additionalLabels: {}
+    additionalLabels:
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
@@ -960,7 +975,8 @@ alertmanager:
     ## Secrets is a list of Secrets in the same namespace as the Alertmanager object, which shall be mounted into the
     ## Alertmanager Pods. The Secrets are mounted into /etc/alertmanager/secrets/.
     ##
-    secrets: []
+    secrets:
+      - alertmanager-telegram-secret
 
     ## If false then the user will opt out of automounting API credentials.
     ##
@@ -1427,15 +1443,14 @@ grafana:
 
   # # To make Grafana persistent (Using Statefulset)
   # #
-  # persistence:
-  #   enabled: true
-  #   type: sts
-  #   storageClassName: "storageClassName"
-  #   accessModes:
-  #     - ReadWriteOnce
-  #   size: 20Gi
-  #   finalizers:
-  #     - kubernetes.io/pvc-protection
+  persistence:
+    enabled: true
+    storageClassName: "longhorn"
+    accessModes:
+      - ReadWriteOnce
+    size: 20Gi
+    finalizers:
+      - kubernetes.io/pvc-protection
 
   serviceAccount:
     create: true
@@ -1605,7 +1620,7 @@ kubeApiServer:
   enabled: true
   tlsConfig:
     serverName: kubernetes
-    insecureSkipVerify: false
+    insecureSkipVerify: true # Kubespray API server uses self-signed certificates
   serviceMonitor:
     enabled: true
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
@@ -1671,7 +1686,7 @@ kubeApiServer:
 
     ## Additional labels
     ##
-    additionalLabels: {}
+    additionalLabels:
     #  foo: bar
 
     ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
@@ -1685,7 +1700,6 @@ kubelet:
   namespace: kube-system
 
   # Overrides the job selector in Grafana dashboards and Prometheus rules
-  # For k3s clusters, change to k3s-server
   jobNameOverride: ""
 
   serviceMonitor:
@@ -1916,7 +1930,7 @@ kubelet:
 
     ## Additional labels
     ##
-    additionalLabels: {}
+    additionalLabels:
     #  foo: bar
 
     ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
@@ -1926,15 +1940,22 @@ kubelet:
 ## Component scraping the kube controller manager
 ##
 kubeControllerManager:
-  enabled: true
+  enabled: false  # metrics port bound to 127.0.0.1 in Kubespray; re-enable after setting kube_controller_manager_bind_address: "0.0.0.0"
 
   # Overrides the job selector in Grafana dashboards and Prometheus rules
-  # For k3s clusters, change to k3s-server
   jobNameOverride: ""
+
+  ## Kubespray: controller-manager runs as a static pod on master nodes.
+  ## In Kubernetes 1.20+, --bind-address defaults to 127.0.0.1, making it
+  ## unreachable via Service. Add your master node IPs explicitly.
+  ##
 
   ## If your kube controller manager is not deployed as a pod, specify IPs it can be found on
   ##
-  endpoints: []
+  endpoints:
+    - 192.168.1.11
+    - 192.168.1.12
+    - 192.168.1.13
   # - 10.141.4.22
   # - 10.141.4.23
   # - 10.141.4.24
@@ -1942,7 +1963,7 @@ kubeControllerManager:
   ## If using kubeControllerManager.endpoints only the port and targetPort are used
   ##
   service:
-    enabled: true
+    enabled: false  # component disabled; prevent v1/Endpoints deprecation warning
     ## If null or unset, the value is determined dynamically based on target Kubernetes version due to change
     ## of default port in Kubernetes 1.22.
     ##
@@ -1995,13 +2016,12 @@ kubeControllerManager:
     #    component: kube-controller-manager
 
     ## Enable scraping kube-controller-manager over https.
-    ## Requires proper certs (not self-signed) and delegated authentication/authorization checks.
-    ## If null or unset, the value is determined dynamically based on target Kubernetes version.
+    ## Kubespray: use https with insecureSkipVerify (self-signed certs)
     ##
-    https: null
+    https: true
 
     # Skip TLS certificate validation when scraping
-    insecureSkipVerify: null
+    insecureSkipVerify: true
 
     # Name of the server to use when validating TLS certificate
     serverName: null
@@ -2027,7 +2047,7 @@ kubeControllerManager:
 
     ## Additional labels
     ##
-    additionalLabels: {}
+    additionalLabels:
     #  foo: bar
 
     ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
@@ -2109,7 +2129,7 @@ coreDns:
 
     ## Additional labels
     ##
-    additionalLabels: {}
+    additionalLabels:
     #  foo: bar
 
     ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
@@ -2227,11 +2247,15 @@ kubeDns:
 ## Component scraping etcd
 ##
 kubeEtcd:
-  enabled: true
+  enabled: false  # metrics port bound to 127.0.0.1 in Kubespray; re-enable after setting etcd_listen_metrics_urls: "http://0.0.0.0:2381"
 
   ## If your etcd is not deployed as a pod, specify IPs it can be found on
+  ## Kubespray deploys etcd as a static pod on master nodes; add master node IPs.
   ##
-  endpoints: []
+  endpoints:
+    - 192.168.1.11
+    - 192.168.1.12
+    - 192.168.1.13
   # - 10.141.4.22
   # - 10.141.4.23
   # - 10.141.4.24
@@ -2239,7 +2263,9 @@ kubeEtcd:
   ## Etcd service. If using kubeEtcd.endpoints only the port and targetPort are used
   ##
   service:
-    enabled: true
+    enabled: false  # component disabled; prevent v1/Endpoints deprecation warning
+    ## Kubespray etcd: metrics are on --listen-metrics-urls port (default 2381).
+    ## If etcd was not configured with --listen-metrics-urls, use client port 2379 instead.
     port: 2381
     targetPort: 2381
     ipDualStack:
@@ -2289,6 +2315,8 @@ kubeEtcd:
     ## proxyUrl: URL of a proxy that should be used for scraping.
     ##
     proxyUrl: ""
+    ## Kubespray etcd exposes metrics via --listen-metrics-urls on port 2381 using plain HTTP.
+    ## The client port (2379) uses HTTPS, but the dedicated metrics URL uses HTTP.
     scheme: http
     insecureSkipVerify: false
     serverName: ""
@@ -2326,7 +2354,7 @@ kubeEtcd:
 
     ## Additional labels
     ##
-    additionalLabels: {}
+    additionalLabels:
     #  foo: bar
 
     ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
@@ -2341,15 +2369,22 @@ kubeEtcd:
 ## Component scraping kube scheduler
 ##
 kubeScheduler:
-  enabled: true
+  enabled: false  # metrics port bound to 127.0.0.1 in Kubespray; re-enable after setting kube_scheduler_bind_address: "0.0.0.0"
 
   # Overrides the job selector in Grafana dashboards and Prometheus rules
-  # For k3s clusters, change to k3s-server
   jobNameOverride: ""
+
+  ## Kubespray: scheduler runs as a static pod on master nodes.
+  ## In Kubernetes 1.20+, --bind-address defaults to 127.0.0.1, making it
+  ## unreachable via Service. Add your master node IPs explicitly.
+  ##
 
   ## If your kube scheduler is not deployed as a pod, specify IPs it can be found on
   ##
-  endpoints: []
+  endpoints:
+    - 192.168.1.11
+    - 192.168.1.12
+    - 192.168.1.13
   # - 10.141.4.22
   # - 10.141.4.23
   # - 10.141.4.24
@@ -2357,7 +2392,7 @@ kubeScheduler:
   ## If using kubeScheduler.endpoints only the port and targetPort are used
   ##
   service:
-    enabled: true
+    enabled: false  # component disabled; prevent v1/Endpoints deprecation warning
     ## If null or unset, the value is determined dynamically based on target Kubernetes version due to change
     ## of default port in Kubernetes 1.23.
     ##
@@ -2400,10 +2435,9 @@ kubeScheduler:
     ##
     proxyUrl: ""
     ## Enable scraping kube-scheduler over https.
-    ## Requires proper certs (not self-signed) and delegated authentication/authorization checks.
-    ## If null or unset, the value is determined dynamically based on target Kubernetes version.
+    ## Kubespray: use https with insecureSkipVerify (self-signed certs)
     ##
-    https: null
+    https: true
 
     ## port: Name of the port the metrics will be scraped from
     ##
@@ -2415,7 +2449,7 @@ kubeScheduler:
     #    component: kube-scheduler
 
     ## Skip TLS certificate validation when scraping
-    insecureSkipVerify: null
+    insecureSkipVerify: true
 
     ## Name of the server to use when validating TLS certificate
     serverName: null
@@ -2441,7 +2475,7 @@ kubeScheduler:
 
     ## Additional labels
     ##
-    additionalLabels: {}
+    additionalLabels:
     #  foo: bar
 
     ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
@@ -2451,11 +2485,7 @@ kubeScheduler:
 ## Component scraping kube proxy
 ##
 kubeProxy:
-  enabled: true
-
-  # Overrides the job selector in Grafana dashboards and Prometheus rules
-  # For k3s clusters, change to k3s-server
-  jobNameOverride: ""
+  enabled: false  # metrics port bound to 127.0.0.1 in Kubespray; re-enable after setting kube_proxy_metrics_bind_address: "0.0.0.0:10249"
 
   ## If your kube proxy is not deployed as a pod, specify IPs it can be found on
   ##
@@ -2465,7 +2495,7 @@ kubeProxy:
   # - 10.141.4.24
 
   service:
-    enabled: true
+    enabled: false  # component disabled; prevent v1/Endpoints deprecation warning
     port: 10249
     targetPort: 10249
     ipDualStack:
@@ -2537,7 +2567,7 @@ kubeProxy:
 
     ## Additional labels
     ##
-    additionalLabels: {}
+    additionalLabels:
     #  foo: bar
 
     ## defines the labels which are transferred from the associated Kubernetes Service object onto the ingested metrics.
@@ -2570,6 +2600,9 @@ kube-state-metrics:
       ## Enable scraping via service monitor
       ## Disable to prevent duplication if you enable prometheusScrape above
       enabled: true
+
+      additionalLabels:
+        app.kubernetes.io/part-of: kube-prometheus-stack
 
       ## kube-state-metrics endpoint
       http:
@@ -2623,6 +2656,9 @@ prometheus-node-exporter:
       enabled: true
 
       jobLabel: jobLabel
+
+      additionalLabels:
+        app.kubernetes.io/part-of: kube-prometheus-stack
 
       ## Scrape interval. If not set, the Prometheus default scrape interval is used.
       ##
@@ -3226,7 +3262,7 @@ prometheusOperator:
     selfMonitor: true
 
     ## Labels for ServiceMonitor
-    additionalLabels: {}
+    additionalLabels:
 
     ## Scrape interval. If not set, the Prometheus default scrape interval is used.
     ##
@@ -3953,7 +3989,7 @@ prometheus:
 
     ## Additional labels
     ##
-    additionalLabels: {}
+    additionalLabels:
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
@@ -4275,11 +4311,15 @@ prometheus:
     ## ServiceMonitors to be selected for target discovery.
     ## If {}, select all ServiceMonitors
     ##
+    ## Select ServiceMonitors by app.kubernetes.io/part-of label.
+    ## - kube-prometheus-stack: matches all built-in ServiceMonitors (chart default)
+    ## - kube-service-monitoring: matches custom app ServiceMonitors you deploy
     serviceMonitorSelector:
       matchExpressions:
         - key: app.kubernetes.io/part-of
           operator: In
           values:
+            - kube-prometheus-stack
             - kube-service-monitoring
     ## Example which selects ServiceMonitors with label "prometheus" set to "somelabel"
     # serviceMonitorSelector:
@@ -5195,7 +5235,7 @@ thanosRuler:
 
     ## Additional labels
     ##
-    additionalLabels: {}
+    additionalLabels:
 
     ## SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
     ##
