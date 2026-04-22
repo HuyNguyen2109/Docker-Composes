@@ -586,13 +586,7 @@ alertmanager:
       - bot_token_file: /etc/alertmanager/secrets/alertmanager-telegram-secret/bot_token
         chat_id: -1003129190360
         parse_mode: HTML
-        message: |-
-          {{ range .Alerts }}
-          <b>[{{ .Labels.severity | toUpper }}] {{ .Labels.alertname }}</b>
-          <b>Namespace:</b> {{ .Labels.namespace }}
-          <b>Summary:</b> {{ .Annotations.summary }}
-          <b>Description:</b> {{ .Annotations.description }}
-          {{ end }}
+        message: '{{ template "telegram.message". }}' 
     templates:
     - '/etc/alertmanager/config/*.tmpl'
 
@@ -621,7 +615,36 @@ alertmanager:
   ## ref: https://prometheus.io/docs/alerting/notifications/
   ##      https://prometheus.io/docs/alerting/notification_examples/
   ##
-  templateFiles: {}
+  templateFiles:
+    telegram.tmpl: |-
+      {{ define "alert_list" }}{{ range . }}
+      ---
+      🪪 <b>{{ .Labels.alertname }}</b>
+      {{- if eq .Labels.severity "critical" }}
+      🚨 CRITICAL 🚨 {{ end }}
+      {{- if eq .Labels.severity "warning" }}
+      ⚠️ WARNING ⚠️{{ end }}
+      {{- if .Annotations.summary }}
+      📝 {{ .Annotations.summary }}{{ end }}
+      {{- if .Annotations.description }}
+      📖 {{ .Annotations.description }}{{ end }}
+
+      🏷 Labels:
+      {{ range .Labels.SortedPairs }}  <i>{{ .Name }}</i>: <code>{{ .Value }}</code>
+      {{ end }}{{ end }}
+      🛠 <a href="https://grafana.prod.global:3000">Grafana</a> 💊 <a href="https://alertmanager.prod.global:9093">Alertmanager</a> 💊 <a href="https://">Any other link</a> 🛠
+      {{ end }}
+
+      {{ define "telegram.message" }}
+      {{ if gt (len .Alerts.Firing) 0 }}
+      🔥 Alerts Firing 🔥
+      {{ template "alert_list" .Alerts.Firing }}
+      {{ end }}
+      {{ if gt (len .Alerts.Resolved) 0 }}
+      ✅ Alerts Resolved ✅
+      {{ template "alert_list" .Alerts.Resolved }}
+      {{ end }}
+      {{ end }}
   #
   ## An example template:
   #   template_1.tmpl: |-
@@ -3861,11 +3884,12 @@ prometheus:
   #     someoneelse:$apr1$DMZX2Z4q$6SbQIfyuLQd.xmo/P0m2c.
 
   ingress:
-    enabled: false
+    enabled: true
 
-    ingressClassName: ""
+    ingressClassName: "traefik"
 
-    annotations: {}
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: web
     labels: {}
 
     ## Redirect ingress to an additional defined port on the service
@@ -3876,7 +3900,8 @@ prometheus:
     ##
     # hosts:
     #   - prometheus.domain.com
-    hosts: []
+    hosts:
+      - prometheus.internal
 
     ## Paths to use for ingress rules - one path should match the prometheusSpec.routePrefix
     ##
@@ -4284,9 +4309,16 @@ prometheus:
     ruleSelectorNilUsesHelmValues: true
 
     ## PrometheusRules to be selected for target discovery.
-    ## If {}, select all PrometheusRules
+    ## Matches built-in rules (app.kubernetes.io/part-of: kube-prometheus-stack) and
+    ## custom app rules (app.kubernetes.io/part-of: kube-service-monitoring).
     ##
-    ruleSelector: {}
+    ruleSelector:
+      matchExpressions:
+        - key: app.kubernetes.io/part-of
+          operator: In
+          values:
+            - kube-prometheus-stack
+            - kube-service-monitoring
     ## Example which select all PrometheusRules resources
     ## with label "prometheus" with values any of "example-rules" or "example-rules-2"
     # ruleSelector:
