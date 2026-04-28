@@ -1,3 +1,5 @@
+### Official Link: https://artifacthub.io/packages/helm/longhorn/longhorn
+
 service:
   ui:
     type: Rancher-Proxy

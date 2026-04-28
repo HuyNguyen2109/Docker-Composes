@@ -24,53 +24,6 @@ podDisruptionBudget:
   enabled: true
   minAvailable: 1
 
-# Pod-level security context for the main controller
-podSecurityContext:
-  enabled: true
-
-# Container-level security context for the main controller
-securityContext:
-  enabled: true
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
-  readOnlyRootFilesystem: true
-  runAsNonRoot: true
-  runAsUser: 1000
-  seccompProfile:
-    type: RuntimeDefault
-
-webhook:
-  podSecurityContext:
-    enabled: true
-  securityContext:
-    enabled: true
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsUser: 1000
-    seccompProfile:
-      type: RuntimeDefault
-
-certController:
-  podSecurityContext:
-    enabled: true
-  securityContext:
-    enabled: true
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsUser: 1000
-    seccompProfile:
-      type: RuntimeDefault
-
 # Pod-level security context (applied to all ESO controller pods)
 podSecurityContext:
   enabled: true
@@ -80,6 +33,7 @@ podSecurityContext:
 
 # Container-level security context for the ESO controller container
 securityContext:
+  enabled: true
   allowPrivilegeEscalation: false
   capabilities:
     drop:
@@ -99,6 +53,7 @@ webhook:
       type: RuntimeDefault
   # Container-level security context for the webhook container
   securityContext:
+    enabled: true
     allowPrivilegeEscalation: false
     capabilities:
       drop:
@@ -118,6 +73,7 @@ certController:
       type: RuntimeDefault
   # Container-level security context for the cert-controller container
   securityContext:
+    enabled: true
     allowPrivilegeEscalation: false
     capabilities:
       drop:

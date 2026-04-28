@@ -1,16 +1,5 @@
 ### Official Link: https://artifacthub.io/packages/helm/harbor/harbor
 
-# Global container-level security context applied to all Harbor components
-containerSecurityContext:
-  privileged: false
-  allowPrivilegeEscalation: false
-  seccompProfile:
-    type: RuntimeDefault
-  runAsNonRoot: true
-  capabilities:
-    drop:
-      - ALL
-
 expose:
   type: nodePort
   nodePort:

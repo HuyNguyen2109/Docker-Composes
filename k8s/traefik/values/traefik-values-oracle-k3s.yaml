@@ -1,3 +1,5 @@
+### Official Link: https://artifacthub.io/packages/helm/traefik/traefik
+
 additionalArguments:
   - "--providers.kubernetescrd"
   - "--providers.kubernetesingress"
@@ -64,3 +66,21 @@ providers:
   kubernetesCRD:
     enabled: true
     allowCrossNamespace: true
+  kubernetesIngress:
+    enabled: true
+    allowExternalNameServices: true
+    publishedService:
+      enabled: true
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+  readOnlyRootFilesystem: true
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault

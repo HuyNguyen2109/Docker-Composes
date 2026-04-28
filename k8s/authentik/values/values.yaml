@@ -1,3 +1,5 @@
+### Official Link: https://artifacthub.io/packages/helm/goauthentik/authentik
+
 global:
   image:
     repository: docker.io/authentik/server
