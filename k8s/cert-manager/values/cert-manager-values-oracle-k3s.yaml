@@ -1,3 +1,5 @@
+### Official Link: https://artifacthub.io/packages/helm/cert-manager/cert-manager
+
 namespace: "cert-manager"
 crds:
   enabled: true
@@ -16,3 +18,13 @@ tolerations:
 - key: "node-role.kubernetes.io/control-plane"
   operator: "Exists"
   effect: "NoSchedule"
+securityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true

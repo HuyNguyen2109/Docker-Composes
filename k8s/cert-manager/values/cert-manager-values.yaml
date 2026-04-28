@@ -1,3 +1,5 @@
+### Official Link: https://artifacthub.io/packages/helm/cert-manager/cert-manager
+
 namespace: "kube-system"
 
 global:
@@ -37,6 +39,16 @@ tolerations:
   effect: "NoSchedule"
 nodeSelector:
   node.cert-manager: "true"
+securityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
 
 webhook:
   replicaCount: 3
@@ -64,6 +76,16 @@ webhook:
     effect: "NoSchedule"
   nodeSelector:
     node.cert-manager: "true"
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
 
 cainjector:
   replicaCount: 3
@@ -91,3 +113,13 @@ cainjector:
     effect: "NoSchedule"
   nodeSelector:
     node.cert-manager: "true"
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
