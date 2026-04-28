@@ -1,3 +1,16 @@
+### Official Link: https://artifacthub.io/packages/helm/harbor/harbor
+
+# Global container-level security context applied to all Harbor components
+containerSecurityContext:
+  privileged: false
+  allowPrivilegeEscalation: false
+  seccompProfile:
+    type: RuntimeDefault
+  runAsNonRoot: true
+  capabilities:
+    drop:
+      - ALL
+
 expose:
   type: nodePort
   nodePort:
@@ -51,6 +64,20 @@ existingSecretAdminPassword: harbor-secrets-eso
 
 cache:
   enabled: true
+
+# Global container security context applied to ALL Harbor component containers.
+# Harbor chart templates reference .Values.containerSecurityContext globally — not per-component.
+# Pod-level security contexts (runAsUser: 10000, fsGroup: 10000) are hardcoded in chart templates.
+# readOnlyRootFilesystem is intentionally omitted: Harbor components write to temp dirs at runtime.
+containerSecurityContext:
+  privileged: false
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
 
 portal:
   resources:
