@@ -1,3 +1,5 @@
+### Official Link: https://artifacthub.io/packages/helm/argo/argo-cd
+
 namespaceOverride: argocd-system
 
 crds:
@@ -11,6 +13,14 @@ global:
   nodeSelector:
     node.kubernetes.io/worker: "true"
     topology.kubernetes.io/region: "sg-prod-01"
+  # Pod-level security context applied to all components
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
+    seccompProfile:
+      type: RuntimeDefault
 
 redis:
   enabled: false
@@ -21,6 +31,15 @@ externalRedis:
   existingSecret: redis-auth-secret-eso
 
 server:
+  containerSecurityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+        - ALL
   ingress:
     enabled: true
     controller: generic
@@ -30,6 +49,51 @@ server:
       cert-manager.io/cluster-issuer: "cloudflare-clusterissuer"
       traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
       traefik.ingress.kubernetes.io/router.tls: "true"
+
+controller:
+  containerSecurityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+        - ALL
+
+dex:
+  containerSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+        - ALL
+
+repoServer:
+  containerSecurityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+        - ALL
+
+applicationSet:
+  containerSecurityContext:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+        - ALL
 
 configs:
   cm:
