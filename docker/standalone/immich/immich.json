@@ -1,0 +1,18 @@
+{
+  "ffmpeg": {
+    "accel": "qsv",
+    "accelDecode": true,
+    "preferredHwDevice": "/dev/dri/renderD128",
+    "preset": "slow",
+    "targetVideoCodec": "h264",
+    "targetAudioCodec": "aac",
+    "transcode": "required"
+  },
+  "machineLearning": {
+    "urls": ["http://immich-machine-learning:3003"]
+  },
+  "logging": {
+    "enabled": true,
+    "level": "error"
+  }
+}
