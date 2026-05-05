@@ -1,18 +1,16 @@
 ### Official Link: https://artifacthub.io/packages/helm/argo/argo-cd
-
-namespaceOverride: argocd-system
+### Installation using Helm: helm upgrade --install my-argo-cd oci://ghcr.io/argoproj/argo-helm/argo-cd 
+namespaceOverride: administrator-apps
 
 crds:
   install: true
   keep: true
 
 global:
-  domain: argocd.mcb-svc.work
+  domain: argocd.internal
   networkPolicy:
     create: true
-  nodeSelector:
-    node.kubernetes.io/worker: "true"
-    topology.kubernetes.io/region: "sg-prod-01"
+  nodeSelector: {}
   # Pod-level security context applied to all components
   securityContext:
     runAsNonRoot: true
@@ -26,9 +24,9 @@ redis:
   enabled: false
 externalRedis:
   enabled: true
-  host: "vn2.mcb-svc.work"
+  host: "dragonfly.administrator-apps.svc.cluster.local"
   port: 6379
-  existingSecret: redis-auth-secret-eso
+  existingSecret: argo-redis-auth-eso
 
 server:
   containerSecurityContext:
@@ -46,9 +44,9 @@ server:
     ingressClassName: traefik
     tls: true
     annotations:
-      cert-manager.io/cluster-issuer: "cloudflare-clusterissuer"
-      traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
-      traefik.ingress.kubernetes.io/router.tls: "true"
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      traefik.ingress.kubernetes.io/router.tls: true
+      cert-manager.io/cluster-issuer: selfsigned-clusterissuer
 
 controller:
   containerSecurityContext:
@@ -102,8 +100,8 @@ configs:
     dex.config: |
       connectors:
       - config:
-          issuer: "https://auth.mcb-svc.work/application/o/argocd/"
-          clientID: "9vf7DhzucXF7ioTItcvFqlNwBGraajx67pPSG6QY"
+          issuer: "https://idp.mcb-homelab.com/application/o/argo-cd/"
+          clientID: "yGtApPgW9pUWxQdOW39MrSngyPNweb6KfcqEv713"
           clientSecret: "$dex.authentik.clientSecret"
           insecureEnableGroups: true
           scopes:
