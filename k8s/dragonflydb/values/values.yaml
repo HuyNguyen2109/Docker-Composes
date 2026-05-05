@@ -18,6 +18,7 @@ extraArgs:
   - --s3_endpoint=s3-api.mcb-homelab.com # Set a valid S3 endpoint URL.
   - --s3_use_https=true
   - --maxmemory=900mb
+  - --default_lua_flags=allow-undeclared-keys
 
 podSecurityContext:
   fsGroup: 2000
@@ -34,7 +35,8 @@ securityContext:
     type: RuntimeDefault
 
 service:
-  type: NodePort
+  type: LoadBalancer
+  loadBalancerIP: 192.168.1.31
 
 passwordFromSecret:
   enable: true
