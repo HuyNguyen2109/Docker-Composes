@@ -1,65 +1,100 @@
+### Official Link: https://artifacthub.io/packages/helm/harbor/harbor
+
 expose:
-  type: ingress
-  ingress:
-    hosts:
-      core: registry.mcb-svc.work
-      className: traefik
-      annotations:
-        cert-manager.io/cluster-issuer: "cloudflare-clusterissuer"
-    traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
-    traefik.ingress.kubernetes.io/router.tls: "true"
+  type: nodePort
+  nodePort:
+    name: harbor
+    ports:
+      http:
+        port: 80
+        nodePort: 30002
+      https:
+        port: 443
+        nodePort: 30003
+  # ingress:
+  #   hosts:
+  #     core: registry.mcb-svc.work
+  #     className: traefik
+  #     annotations:
+  #       cert-manager.io/cluster-issuer: "cloudflare-clusterissuer"
+  #   traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+  #   traefik.ingress.kubernetes.io/router.tls: "true"
   tls:
     enabled: true
     certSource: auto
     auto:
       commonName: cert-manager
 
-externalURL: https://registry.mcb-svc.work
+externalURL: https://lb.internal:3003
 persistence:
   enabled: true
+  resourcePolicy: "keep"
+  persistentVolumeClaim:
+    registry:
+      storageClass: longhorn
+      size: 10Gi
+    jobservice:
+      storageClass: longhorn
+      size: 1Gi
+    trivy:
+      storageClass: longhorn
+      size: 10Gi
   imageChartStorage:
-    type: filesystem
-existingSecretSecretKey: harbor-secret-key-eso
+    type: s3
+    s3:
+      existingSecret: harbor-secrets-eso
+      bucket: harbor
+      region: auto
+      regionendpoint: https://s3-api.mcb-homelab.com
 
-existingSecretAdminPassword: harbor-admin-password-eso
+
+existingSecretSecretKey: harbor-secrets-eso
+existingSecretAdminPassword: harbor-secrets-eso
+
 cache:
   enabled: true
+
+# Global container security context applied to ALL Harbor component containers.
+# Harbor chart templates reference .Values.containerSecurityContext globally — not per-component.
+# Pod-level security contexts (runAsUser: 10000, fsGroup: 10000) are hardcoded in chart templates.
+# readOnlyRootFilesystem is intentionally omitted: Harbor components write to temp dirs at runtime.
+containerSecurityContext:
+  privileged: false
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
 
 portal:
   resources:
     requests:
       memory: 256Mi
       cpu: 100m
-  nodeSelector:
-    node.kubernetes.io/worker: "true"
-    topology.kubernetes.io/region: "sg-prod-01"
+  nodeSelector: {}
 
 core:
   resources:
     requests:
       memory: 256Mi
       cpu: 100m
-  nodeSelector:
-    node.kubernetes.io/worker: "true"
-    topology.kubernetes.io/region: "sg-prod-01"
+  nodeSelector: {}
 
 jobservice:
   resources:
     requests:
       memory: 256Mi
       cpu: 100m
-  nodeSelector:
-    node.kubernetes.io/worker: "true"
-    topology.kubernetes.io/region: "sg-prod-01"
+  nodeSelector: {}
 
 registry:
   resources:
     requests:
       memory: 256Mi
       cpu: 100m
-  nodeSelector:
-    node.kubernetes.io/worker: "true"
-    topology.kubernetes.io/region: "sg-prod-01"
+  nodeSelector: {}
 
 trivy:
   resources:
@@ -69,6 +104,20 @@ trivy:
     limits:
       cpu: 1
       memory: 1Gi
-  nodeSelector:
-    node.kubernetes.io/worker: "true"
-    topology.kubernetes.io/region: "sg-prod-01"
+  nodeSelector: {}
+
+database:
+  type: external
+  external:
+    host: lb.internal
+    port: 6432
+    username: harbor-db-admin
+    coreDatabase: harbor
+    existingSecret: harbor-secrets-eso
+
+redis:
+  type: external
+  external:
+    addr: dragonfly.administrator-apps.svc.cluster.local:6379
+    existingSecret: harbor-secrets-eso
+    username: default

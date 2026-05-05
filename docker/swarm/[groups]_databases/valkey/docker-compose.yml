@@ -1,0 +1,39 @@
+services:
+  valkey-server:
+    image: valkey/valkey:latest
+    # ports:
+    #   - "6379:6379"
+    volumes:
+      - valkey-data:/data
+    command: ["valkey-server", "/usr/local/etc/valkey/valkey.conf"]
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.codename == ${SWARM_NODE_CODENAME}
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+    networks:
+      - db-internetwork
+    configs:
+      - source: valkey-config
+        target: /usr/local/etc/valkey/valkey.conf
+
+volumes:
+  valkey-data:
+    driver: local
+
+configs:
+  valkey-config:
+    external: true
+
+networks:
+  db-internetwork:
+    external: true
+  traefik-internetwork:
+    external: true

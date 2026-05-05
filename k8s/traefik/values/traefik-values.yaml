@@ -1,8 +1,22 @@
+### Official Link: https://artifacthub.io/packages/helm/traefik/traefik
+
 ports:
   web:
-    redirection:
-      entryPoint:
-        to: websecure
+    port: 8000
+    expose:
+      default: true
+    exposedPort: 80
+    protocol: TCP
+    http:
+      redirection: {}
+        # entryPoint:
+        #   to: websecure
+  websecure:
+    port: 8443
+    expose:
+      default: true
+    exposedPort: 443
+    protocol: TCP
 
 ingressClass:
   enabled: true
@@ -20,9 +34,12 @@ deployment:
   enabled: true
   replicas: 3
 
-# podSecurityContext:
-#   seccompProfile:
-#     type: RuntimeDefault
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
 
 podDisruptionBudget:
   enabled: true
@@ -34,16 +51,16 @@ updateStrategy:
     maxSurge: 1
 
 affinity:
- podAntiAffinity:
-   requiredDuringSchedulingIgnoredDuringExecution:
-     - labelSelector:
-         matchLabels:
-           app.kubernetes.io/name: '{{ template "traefik.name" . }}'
-           app.kubernetes.io/instance: '{{ .Release.Name }}-{{ include "traefik.namespace" . }}'
-       topologyKey: kubernetes.io/hostname
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: '{{ template "traefik.name" . }}'
+            app.kubernetes.io/instance: '{{ .Release.Name }}-{{ include "traefik.namespace" . }}'
+        topologyKey: kubernetes.io/hostname
 
 nodeSelector:
-  node-role.kubernetes.io/control-plane: ""
+  node-role.kubernetes.io/control-plane:
 tolerations:
 - key: "node-role.kubernetes.io/control-plane"
   operator: "Exists"
@@ -51,3 +68,25 @@ tolerations:
 - key: "node-role.kubernetes.io/unschedulable"
   operator: "Exists"
   effect: "NoSchedule"
+
+service:
+  enabled: true
+  type: LoadBalancer
+  spec:
+    loadBalancerIP: 192.168.1.30
+
+providers:
+  kubernetesCRD:
+    enabled: true
+    allowCrossNamespace: true
+  kubernetesIngress:
+    enabled: true
+    allowExternalNameServices: true
+    publishedService:
+      enabled: true
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+  readOnlyRootFilesystem: true

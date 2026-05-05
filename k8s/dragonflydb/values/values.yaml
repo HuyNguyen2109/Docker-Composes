@@ -1,0 +1,190 @@
+## Labels applied to ALL chart resources (Deployment, Service, ServiceMonitor, PrometheusRule, etc.)
+## Used to opt resources into Prometheus selectors without per-resource label support.
+commonLabels:
+  app.kubernetes.io/part-of: kube-service-monitoring
+
+storage:
+  enabled: true
+  requests: 2Gi # Set a desired volume size for PVC.
+  storageClass: longhorn
+
+extraArgs:
+  - --logtostderr
+  - --dbfilename=my-dump-{timestamp} # Only the filename without any file extensions.
+  - --snapshot_cron=0 * * * *        # Set a valid cron schedule.
+  - --cluster_mode=emulated
+  - --admin_port=6790
+  - --dir=s3://dragonflydb-backups/ # Set a valid S3 bucket URL.
+  - --s3_endpoint=s3-api.mcb-homelab.com # Set a valid S3 endpoint URL.
+  - --s3_use_https=true
+  - --maxmemory=900mb
+  - --default_lua_flags=allow-undeclared-keys
+
+podSecurityContext:
+  fsGroup: 2000
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  seccompProfile:
+    type: RuntimeDefault
+
+service:
+  type: LoadBalancer
+  loadBalancerIP: 192.168.1.31
+
+passwordFromSecret:
+  enable: true
+  existingSecret:
+    name: "dragonflydb-auth-eso"
+    key: "auth"
+
+envFrom:
+  - secretRef:
+      name: "dragonfly-s3-storage"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 1Gi
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: dragonfly
+          topologyKey: kubernetes.io/hostname
+
+serviceMonitor:
+  enabled: true
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: kube-service-monitoring
+
+prometheusRule:
+  enabled: true
+  spec:
+    # ── Availability ───────────────────────────────────────────────────────────
+    - alert: DragonflyMissing
+      expr: absent(dragonfly_uptime_in_seconds) == 1
+      for: 0m
+      labels:
+        severity: critical
+      annotations:
+        summary: DragonflyDB is missing
+        description: "DragonflyDB has disappeared from Prometheus target discovery. Pod may be crashlooping or deleted."
+
+    - alert: DragonflyDown
+      expr: up{job=~".*dragonfly.*"} == 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: DragonflyDB is unreachable
+        description: "Prometheus cannot scrape DragonflyDB on {{ $labels.instance }}."
+
+    # ── Memory ──────────────────────────────────────────────────────────────────
+    - alert: DragonflyHighMemoryUsage
+      # Fires when used memory exceeds 85% of the configured maxmemory limit.
+      # Only evaluates when memory_max_bytes > 0 (i.e. --maxmemory is set).
+      expr: |
+        (dragonfly_memory_used_bytes / dragonfly_memory_max_bytes) > 0.85
+        and dragonfly_memory_max_bytes > 0
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: DragonflyDB high memory usage
+        description: "Memory usage is {{ $value | humanizePercentage }} of the configured maxmemory limit."
+
+    - alert: DragonflyMemoryCritical
+      expr: |
+        (dragonfly_memory_used_bytes / dragonfly_memory_max_bytes) > 0.95
+        and dragonfly_memory_max_bytes > 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: DragonflyDB memory near limit
+        description: "Memory usage is {{ $value | humanizePercentage }} of maxmemory — OOM evictions or errors imminent."
+
+    # ── OOM / Eviction ──────────────────────────────────────────────────────────
+    - alert: DragonflyKeyEviction
+      # Any evictions indicate memory pressure; in a homelab this usually means
+      # maxmemory is too low or data growth is unexpected.
+      expr: rate(dragonfly_evicted_keys_total[5m]) > 0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: DragonflyDB is evicting keys
+        description: "{{ $value | humanize }} keys/sec are being evicted. Increase --maxmemory or reduce dataset size."
+
+    - alert: DragonflyOOMErrors
+      expr: rate(dragonfly_oom_errors_total[5m]) > 0
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: DragonflyDB OOM errors
+        description: "Commands are being rejected due to out-of-memory errors at {{ $value | humanize }}/sec."
+
+    # ── Connections ──────────────────────────────────────────────────────────────
+    - alert: DragonflyTooManyConnections
+      # Adjust threshold to match your --maxclients setting (default 64000).
+      expr: sum(dragonfly_connected_clients) > 100
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: DragonflyDB has too many connected clients
+        description: "{{ $value }} clients are connected. Check for connection leaks in your applications."
+
+    - alert: DragonflyRejectedConnections
+      expr: rate(dragonfly_listener_accept_error_total[5m]) > 0
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: DragonflyDB is rejecting new connections
+        description: "New connections are being refused (maxclients reached or TLS errors)."
+
+    # ── Cache hit ratio ─────────────────────────────────────────────────────────
+    - alert: DragonflyLowCacheHitRatio
+      # Useful only if DragonflyDB is used as a cache (--cache_mode).
+      # A ratio below 80% suggests the keyspace is too small or TTLs are too short.
+      expr: |
+        rate(dragonfly_keyspace_hits_total[5m])
+          / (rate(dragonfly_keyspace_hits_total[5m]) + rate(dragonfly_keyspace_misses_total[5m]))
+          < 0.80
+        and (rate(dragonfly_keyspace_hits_total[5m]) + rate(dragonfly_keyspace_misses_total[5m])) > 10
+      for: 15m
+      labels:
+        severity: info
+      annotations:
+        summary: DragonflyDB cache hit ratio is low
+        description: "Cache hit ratio is {{ $value | humanizePercentage }}. Consider increasing maxmemory or reviewing key TTLs."
+
+    # ── Persistence / Snapshots ─────────────────────────────────────────────────
+    - alert: DragonflyNoRecentSnapshot
+      # Fires if no successful RDB snapshot has completed in the last 2 hours.
+      # snapshot_cron is set to every hour in extraArgs.
+      expr: (time() - dragonfly_last_save_seconds_total) > 7200
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: DragonflyDB has not saved a snapshot recently
+        description: "Last successful RDB snapshot was {{ $value | humanizeDuration }} ago. Check S3 connectivity and snapshot_cron setting."
+

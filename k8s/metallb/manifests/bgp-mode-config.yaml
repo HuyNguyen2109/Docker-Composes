@@ -1,11 +1,11 @@
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
-  name: production-pool
+  name: primary
   namespace: metallb-system
 spec:
   addresses:
-  - 192.168.1.21-192.168.1.35
+  - 192.168.1.30-192.168.1.39
   autoAssign: true
   avoidBuggyIPs: true
 ---
@@ -18,7 +18,6 @@ spec:
   peerAddress: 192.168.1.1
   peerASN: 64512
   myASN: 64513
-  bfdProfile: homelab-bfd-1
   ebgpMultiHop: true
   holdTime: 90s
   keepaliveTime: 30s
@@ -30,7 +29,7 @@ metadata:
   namespace: metallb-system
 spec: 
   ipAddressPools:
-  - production-pool
+  - primary
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
@@ -39,14 +38,4 @@ metadata:
   namespace: metallb-system
 spec:
   ipAddressPools:
-  - production-pool
----
-apiVersion: metallb.io/v1beta1
-kind: BFDProfile
-metadata:
-  name: homelab-bfd-1
-  namespace: metallb-system
-spec:
-  receiveInterval: 380
-  transmitInterval: 270
-  detectMultiplier: 3
+  - primary

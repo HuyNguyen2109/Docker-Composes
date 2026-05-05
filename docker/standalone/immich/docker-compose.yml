@@ -1,0 +1,53 @@
+services:
+  server:
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
+    container_name: immich-server
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+      IMMICH_ENV: production
+      IMMICH_LOG_LEVEL: error
+      IMMICH_LOG_FORMAT: json
+      IMMICH_CONFIG_FILE: /config/immich.json
+      DB_URL: ${DB_URL}
+      REDIS_HOSTNAME: ${REDIS_HOSTNAME}
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - "2283:2283"
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "44"   # video
+      - "993"  # render
+    volumes:
+      - ${BASE_LOCATION}/upload:/usr/src/app/upload
+      - ${BASE_LOCATION}/data:/data
+      - /etc/localtime:/etc/localtime:ro
+      - ./immich.json:/config/immich.json:ro
+    networks:
+      immich:
+        aliases:
+          - immich-server
+
+  machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
+    restart: unless-stopped
+    container_name: immich-ml
+    environment:
+      MACHINE_LEARNING_CACHE_FOLDER: /cache
+    volumes:
+      - immich-model-cache:/cache
+    networks:
+      immich:
+        aliases:
+          - immich-machine-learning
+
+networks:
+  immich:
+    external: true
+
+volumes:
+  immich-model-cache:
+    driver: local
+

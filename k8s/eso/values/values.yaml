@@ -1,4 +1,86 @@
+### Official Link: https://artifacthub.io/packages/helm/external-secrets-operator/external-secrets
+
 installCRDs: true
-nodeSelector:
-  topology.kubernetes.io/region: sg-prod-01
-  node.kubernetes.io/worker: 'true'
+replicaCount: 3
+leaderElect: true
+global:
+  nodeSelector: {}
+cert-manager:
+  enabled: true
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+livenessProbe:
+  enabled: true
+  spec:
+    timeoutSeconds: 5
+    periodSeconds: 10
+    failureThreshold: 5
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Pod-level security context (applied to all ESO controller pods)
+podSecurityContext:
+  enabled: true
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container-level security context for the ESO controller container
+securityContext:
+  enabled: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+webhook:
+  # Pod-level security context for the webhook pods
+  podSecurityContext:
+    enabled: true
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  # Container-level security context for the webhook container
+  securityContext:
+    enabled: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
+    seccompProfile:
+      type: RuntimeDefault
+
+certController:
+  # Pod-level security context for the cert-controller pods
+  podSecurityContext:
+    enabled: true
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  # Container-level security context for the cert-controller container
+  securityContext:
+    enabled: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
+    seccompProfile:
+      type: RuntimeDefault
+    

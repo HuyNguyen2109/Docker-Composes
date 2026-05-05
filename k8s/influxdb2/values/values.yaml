@@ -1,3 +1,5 @@
+### Official Link: https://artifacthub.io/packages/helm/influxdata/influxdb2
+
 adminUser:
   organization: "default"
   bucket: "default"
@@ -23,3 +25,14 @@ ingress:
   tls: true
   className: traefik
   hostname: influxdb.mcb-svc.work
+
+# Pod-level security context (chart key: securityContext).
+# readOnlyRootFilesystem is NOT set here because InfluxDB2 must write to
+# /var/lib/influxdb2; use a PVC for that path instead.
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
