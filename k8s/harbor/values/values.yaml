@@ -119,5 +119,4 @@ redis:
   type: external
   external:
     addr: dragonfly.administrator-apps.svc.cluster.local:6379
-    existingSecret: harbor-secrets-eso
     username: default
