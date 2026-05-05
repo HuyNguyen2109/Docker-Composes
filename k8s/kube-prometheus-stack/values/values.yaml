@@ -309,7 +309,8 @@ defaultRules:
     # fsSelector: 'fstype=~"ext[234]|btrfs|xfs|zfs"'
 
   ## Disabled PrometheusRule alerts
-  disabled: {}
+  disabled:
+    InfoInhibitor: true
   # KubeAPIDown: true
   # NodeRAIDDegraded: true
 
@@ -1568,7 +1569,17 @@ grafana:
 
   ## Configure additional grafana datasources (passed through tpl)
   ## ref: https://grafana.com/docs/grafana/latest/administration/provisioning/#datasources
-  additionalDataSources: []
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki-gateway.monitoring.svc.cluster.local
+      editable: true
+      jsonData:
+        maxLines: 1000
+        httpHeaderName1: "X-Scope-OrgID"
+      secureJsonData:
+        httpHeaderValue1: "1"
   # - name: prometheus-sample
   #   access: proxy
   #   basicAuth: true
@@ -1814,9 +1825,11 @@ kubelet:
     ##
     cAdvisorMetricRelabelings:
       # Drop less useful container CPU metrics.
+      # NOTE: container_cpu_cfs_throttled_seconds_total is intentionally kept
+      # so the CPUThrottlingHigh alert rule has valid data to evaluate against.
       - sourceLabels: [__name__]
         action: drop
-        regex: 'container_cpu_(cfs_throttled_seconds_total|load_average_10s|system_seconds_total|user_seconds_total)'
+        regex: 'container_cpu_(load_average_10s|system_seconds_total|user_seconds_total)'
       # Drop less useful container / always zero filesystem metrics.
       - sourceLabels: [__name__]
         action: drop
