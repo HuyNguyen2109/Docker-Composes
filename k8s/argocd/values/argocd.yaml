@@ -26,7 +26,7 @@ externalRedis:
   enabled: true
   host: "dragonfly.administrator-apps.svc.cluster.local"
   port: 6379
-  existingSecret: argocd-secret-eso
+  existingSecret: argo-redis-auth-eso
 
 server:
   containerSecurityContext:
@@ -93,17 +93,10 @@ repoServer:
     - name: avp-helm
       command: [/var/run/argocd/argocd-cmp-server]
       image: quay.io/argoproj/argocd:v3.3.9
+      envFrom:
+        - secretRef:
+            name: argocd-vault-plugin-credentials
       env:
-        - name: AVP_TYPE
-          value: vault
-        - name: AVP_AUTH_TYPE
-          value: k8s
-        - name: VAULT_ADDR
-          value: http://unraid.internal:9200
-        - name: AVP_K8S_ROLE
-          value: avp-role
-        - name: AVP_K8S_MOUNT_PATH
-          value: kubernetes
         - name: HELM_CACHE_HOME
           value: /tmp/helm/cache
         - name: HELM_CONFIG_HOME
