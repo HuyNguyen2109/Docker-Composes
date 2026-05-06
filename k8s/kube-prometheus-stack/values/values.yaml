@@ -1451,7 +1451,7 @@ grafana:
     # hosts:
     #   - grafana.domain.com
     hosts:
-      - grafana.internal
+      - grafana.ingress.internal
 
     ## Path for grafana ingress
     path: /
@@ -3914,7 +3914,7 @@ prometheus:
     # hosts:
     #   - prometheus.domain.com
     hosts:
-      - prometheus.internal
+      - prometheus.ingress.internal
 
     ## Paths to use for ingress rules - one path should match the prometheusSpec.routePrefix
     ##
