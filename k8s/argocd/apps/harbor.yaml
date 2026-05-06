@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: harbor
+  namespace: administrator-apps
+spec:
+  destination:
+    namespace: administrator-apps
+    name: homelab-cluster
+  sources:
+    - repoURL: git@github.com:HuyNguyen2109/My-DevOps.git
+      targetRevision: develop
+      path: k8s/harbor/values
+      plugin:
+        name: avp-helm
+        env:
+          - name: HELM_REPO_URL
+            value: https://helm.goharbor.io
+          - name: HELM_REPO_NAME
+            value: harbor-repo
+          - name: HELM_CHART_NAME
+            value: harbor
+          - name: HELM_CHART_VERSION
+            value: 1.18.3
+  project: homelab
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      enabled: true
+    syncOptions:
+      - RespectIgnoreDifferences=true
+  ignoreDifferences:
+    - group: ""
+      kind: Secret
+      name: harbor-core
+      jqPathExpressions:
+        - .data.secret
+        - .data.CSRF_KEY
+    - group: ""
+      kind: Secret
+      name: harbor-jobservice
+      jqPathExpressions:
+        - .data.JOBSERVICE_SECRET
