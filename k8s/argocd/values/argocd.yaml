@@ -160,7 +160,7 @@ configs:
             - bash
             - -c
             - |
-              helm repo add "${ARGOCD_ENV_HELM_REPO_NAME}" "${ARGOCD_ENV_HELM_REPO_URL}" --force-update 2>/dev/null
+              helm repo add "${ARGOCD_ENV_HELM_REPO_NAME}" "${ARGOCD_ENV_HELM_REPO_URL}" --force-update > /dev/null 2>&1
               helm template "${ARGOCD_APP_NAME}" "${ARGOCD_ENV_HELM_REPO_NAME}/${ARGOCD_ENV_HELM_CHART_NAME}" \
                 --version "${ARGOCD_ENV_HELM_CHART_VERSION}" \
                 --include-crds \
