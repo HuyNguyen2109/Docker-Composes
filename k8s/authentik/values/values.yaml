@@ -3,9 +3,7 @@
 global:
   image:
     repository: docker.io/authentik/server
-    tag: "2026.2.1"
-  nodeSelector:
-    node.kubernetes.io/control-plane:
+  nodeSelector: {}
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000
