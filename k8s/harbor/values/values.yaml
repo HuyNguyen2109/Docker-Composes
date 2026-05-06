@@ -120,4 +120,4 @@ redis:
   external:
     addr: dragonfly.administrator-apps.svc.cluster.local:6379
     username: default
-    password: ""
+    password: <path:kubernetes/data/docker-secrets#dragonflydb-credentials>
