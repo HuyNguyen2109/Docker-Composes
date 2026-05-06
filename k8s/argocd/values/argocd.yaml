@@ -7,7 +7,7 @@ crds:
   keep: true
 
 global:
-  domain: argocd.internal
+  domain: argocd.ingress.internal
   networkPolicy:
     create: true
   nodeSelector: {}
@@ -161,12 +161,22 @@ configs:
             - -c
             - |
               helm repo add "${ARGOCD_ENV_HELM_REPO_NAME}" "${ARGOCD_ENV_HELM_REPO_URL}" --force-update > /dev/null 2>&1
+              cat > /tmp/avp-resolver.yaml << 'AVPEOF'
+              apiVersion: v1
+              kind: ConfigMap
+              metadata:
+                name: avp-resolver
+              data:
+                dragonflydb-credentials: <path:kubernetes/data/docker-secrets#dragonflydb-credentials>
+              AVPEOF
+              DRAGONFLYDB_PASS=$(argocd-vault-plugin generate /tmp/avp-resolver.yaml | grep 'dragonflydb-credentials:' | awk '{print $2}')
+              if [ -z "${DRAGONFLYDB_PASS}" ]; then echo "ERROR: failed to resolve dragonflydb-credentials from Vault" >&2; exit 1; fi
               helm template "${ARGOCD_APP_NAME}" "${ARGOCD_ENV_HELM_REPO_NAME}/${ARGOCD_ENV_HELM_CHART_NAME}" \
                 --version "${ARGOCD_ENV_HELM_CHART_VERSION}" \
                 --include-crds \
                 -n "${ARGOCD_APP_NAMESPACE}" \
-                -f values.yaml | \
-              argocd-vault-plugin generate -
+                -f "${ARGOCD_ENV_HELM_VALUES_FILE}" \
+                --set "redis.external.password=${DRAGONFLYDB_PASS}"
         lockRepo: false
   cm:
     exec.enabled: true
