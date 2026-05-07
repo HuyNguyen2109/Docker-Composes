@@ -26,7 +26,7 @@ resources:
 #   ingress:
 #     class: traefik
 
-replicas: 3
+replicas: 2
 antiAffinity: preferred
 topologyKey: kubernetes.io/hostname
 
@@ -34,9 +34,9 @@ extraTolerations:
 - key: "CriticalAddonsOnly"
   value: "true"
   effect: "NoExecute"
-- key: "node-role.kubernetes.io/control-plane"
-  operator: "Exists"
-  effect: "NoSchedule"
+# Removed control-plane toleration: with 2 worker nodes (talos-01, talos-02),
+# Rancher replicas must not land on the control-plane (talos-00) as it causes
+# CPU saturation and leader election failures under load.
 
 service:
   type: NodePort
