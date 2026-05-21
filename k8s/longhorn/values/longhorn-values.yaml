@@ -1,8 +1,17 @@
+### Official Link: https://artifacthub.io/packages/helm/longhorn/longhorn
+
 service:
   ui:
-    type: LoadBalancer
+    type: Rancher-Proxy
+    nodePort: null
   manager:
     type: ClusterIP
+longhornManager:
+  log:
+    format: json
+longhornDriver:
+  log:
+    format: json
 longhornUI:
   replicas: 3
   affinity:
@@ -24,16 +33,17 @@ longhornUI:
   - key: "node-role.kubernetes.io/control-plane"
     operator: "Exists"
     effect: "NoSchedule"
-  nodeSelector:
-    node.cert-manager: "true"
+  nodeSelector: {}
 defaultSettings:
-  defaultDataPath: "/var/lib/longhorn"
+  defaultDataPath: "/dev/longhorn-v2-block"
+  deletingConfirmationFlag: "true"
 enablePSP: false
 
 persistence:
-  defaultClassReplicaCount: 2
+  defaultClassReplicaCount: 3
+  dataEngine: v2
 
 defaultBackupStore:
   backupTarget: "s3://longhorn@auto/"
-  backupTargetCredentialSecret: "minio-secret-eso"
+  backupTargetCredentialSecret: "s3-secret-eso"
 

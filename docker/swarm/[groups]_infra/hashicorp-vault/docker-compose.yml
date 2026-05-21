@@ -1,0 +1,43 @@
+services:
+  vault:
+    image: hashicorp/vault:${IMAGE_TAG}
+    command: server
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - traefik-internetwork
+    environment:
+      - VAULT_ADDR=http://${VAULT_URL}
+    configs:
+      - source: vault-config
+        target: /vault/config/config.hcl
+    volumes:
+      - ${MASTER_DATA_FOLDER}/vault/data:/vault/file
+      - ${MASTER_DATA_FOLDER}/vault/logs:/vault/logs
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "256M"
+        reservations:
+          cpus: "0.125"  
+          memory: "128M"
+      update_config:
+        parallelism: 1
+        delay: 5s
+        failure_action: rollback
+        max_failure_ratio: 0.5
+      restart_policy:
+        condition: any
+      placement:
+        constraints:
+          - node.platform.os == linux
+          - node.labels.codename == ${SWARM_NODE_CODENAME}
+configs:
+  vault-config:
+    external: true
+networks:
+  traefik-internetwork:
+    external: true

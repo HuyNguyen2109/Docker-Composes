@@ -1,0 +1,186 @@
+services:
+  main_database:
+    image: postgres:${IMAGE_TAG:-17}
+    secrets:
+      - postgres-root-password
+    volumes:
+      - ${MASTER_DATA_FOLDER}/postgres:/var/lib/postgresql/data
+      - ${MASTER_DATA_FOLDER}/postgres-wal:/wal-archive
+    configs:
+      - source: postgres-extended-conf
+        target: /etc/postgresql/conf.d/extended.conf
+      - source: pg-hba-conf
+        target: /etc/postgresql/pg_hba.conf
+      - source: archive-wal-script
+        target: /usr/local/bin/archive_wal.sh
+        mode: 0755
+    networks:
+      db-internetwork:
+        aliases:
+          - postgres
+    deploy:
+      update_config:
+        parallelism: 1
+        delay: 5s
+        failure_action: rollback
+      restart_policy:
+        condition: any
+        delay: 30s
+        max_attempts: 0
+      resources:
+        limits:
+          cpus: "3"
+          memory: "16G"
+        reservations:
+          cpus: "0.25"
+          memory: "4G"
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.database == master
+          - node.labels.codename == ${SWARM_NODE_CODENAME}
+    environment:
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres-root-password
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_HOST_AUTH_METHOD=md5
+      - POSTGRES_INITDB_ARGS=--auth-host=md5 --auth-local=md5
+      - PGDATA=/var/lib/postgresql/data
+    command:
+      - sh
+      - -c
+      - |
+        chown -R 999:999 /wal-archive
+        chmod -R 755 /wal-archive
+        exec docker-entrypoint.sh postgres -c config_file=/etc/postgresql/conf.d/extended.conf -c hba_file=/etc/postgresql/pg_hba.conf
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep '[p]ostgres'"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    stop_grace_period: 5m
+
+  pgbouncer-transaction-mode:
+    image: edoburu/pgbouncer:${PGBOUNCER_TAG:-latest}
+    configs:
+      - source: pgbouncer-transaction-ini
+        target: /etc/pgbouncer/pgbouncer.ini
+      - source: pgbouncer-userlist
+        target: /etc/pgbouncer/userlist.txt
+    networks:
+      db-internetwork:
+        aliases:
+          - pgbouncer-transaction
+      traefik-internetwork: {}
+    deploy:
+      mode: replicated
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - node.labels.db-pool == true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U postgres || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  pgbouncer-session-mode:
+    image: edoburu/pgbouncer:${PGBOUNCER_TAG:-latest}
+    configs:
+      - source: pgbouncer-session-ini
+        target: /etc/pgbouncer/pgbouncer.ini
+      - source: pgbouncer-userlist
+        target: /etc/pgbouncer/userlist.txt
+    networks:
+      db-internetwork:
+        aliases:
+          - pgbouncer-session
+      traefik-internetwork: {}
+    deploy:
+      mode: replicated
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - node.labels.db-pool == true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U postgres || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  db_management_tool:
+    image: dpage/pgadmin4:${PGADMIN_TAG:-latest}
+    secrets:
+      - pgadmin-default-password
+    networks:
+      traefik-internetwork:
+        aliases:
+          - pgadmin
+      db-internetwork: {}
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD_FILE=/run/secrets/pgadmin-default-password
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - pgadmin_configs:/pgadmin4
+    deploy:
+      update_config:
+        parallelism: 1
+        delay: 5s
+        failure_action: rollback
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: "512M"
+        reservations:
+          cpus: "0.25"
+          memory: "125M"
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.database != master
+          - node.role != manager
+
+networks:
+  db-internetwork:
+    external: true
+  traefik-internetwork:
+    external: true
+
+secrets:
+  postgres-root-password:
+    external: true
+  pgadmin-default-password:
+    external: true
+
+configs:
+  postgres-extended-conf:
+    external: true
+  pg-hba-conf:
+    external: true
+  archive-wal-script:
+    external: true
+  pgbouncer-transaction-ini:
+    external: true
+  pgbouncer-session-ini:
+    external: true
+  pgbouncer-userlist:
+    external: true
+
+volumes:
+  pgadmin_data:
+    driver: local
+  pgadmin_configs:
+    driver: local

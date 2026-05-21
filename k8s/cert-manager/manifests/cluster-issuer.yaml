@@ -14,3 +14,12 @@ spec:
           apiTokenSecretRef:
             name: cloudflare-api-token-secret-eso
             key: api-token
+
+---
+# Self-signed ClusterIssuer for internal/testing TLS
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-clusterissuer
+spec:
+  selfSigned: {}

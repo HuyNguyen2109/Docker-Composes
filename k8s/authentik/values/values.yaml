@@ -1,62 +1,54 @@
+### Official Link: https://artifacthub.io/packages/helm/goauthentik/authentik
+
 global:
   image:
     repository: docker.io/authentik/server
-    tag: "2025.10"
-  nodeSelector:
-    node.kubernetes.io/worker: "true"
-    topology.kubernetes.io/region: "sg-prod-01"
-  volumes:
-    - name: postgres-cacert-eso
-      secret:
-        secretName: postgres-cacert-eso
-    - name: postgres-cert-eso
-      secret:
-        secretName: postgres-cert-eso
-    - name: postgres-key-eso
-      secret:
-        secretName: postgres-key-eso
-        defaultMode: 0640 
-  volumeMounts:
-    - name: postgres-cacert-eso
-      mountPath: /etc/postgres/cacert
-      readOnly: true
-    - name: postgres-cert-eso
-      mountPath: /etc/postgres/cert
-      readOnly: true
-    - name: postgres-key-eso
-      mountPath: /etc/postgres/key
-      readOnly: true
+  nodeSelector: {}
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    
   env:
     - name: AUTHENTIK_SECRET_KEY
       valueFrom:
         secretKeyRef:
           name: authentik-secret-key-eso
           key: authentik-secret-key
+    # Main Postgres Configuration
     - name: AUTHENTIK_POSTGRESQL__HOST
-      value: "pooler-authentik-db-rw.databases.svc.cluster.local"
+      value: "pgbouncer.databases.svc.cluster.local"
+    - name: AUTHENTIK_POSTGRESQL__PORT
+      value: "5432"
     - name: AUTHENTIK_POSTGRESQL__USER
-      value: "authentik_dbadmin"
+      value: "authentik-db-admin"
     - name: AUTHENTIK_POSTGRESQL__NAME
-      value: "authentik-prd"  
+      value: "authentik"
     - name: AUTHENTIK_POSTGRESQL__PASSWORD
       valueFrom:
         secretKeyRef:
           name: postgres-db-password-eso
           key: authentik-db-password
-    - name: AUTHENTIK_POSTGRESQL__SSLMODE
-      value: "verify-full"
-    - name: AUTHENTIK_POSTGRESQL__SSLROOTCERT
-      value: /etc/postgres/cacert/cloudflare-origin-ca-pem-b64
-    - name: AUTHENTIK_POSTGRESQL__SSLCERT
-      value: /etc/postgres/cert/cloudflare-cert-pem-b64
-    - name: AUTHENTIK_POSTGRESQL__SSLKEY
-      value: /etc/postgres/key/cloudflare-key-pem-b64
+    # Read-replica Postgres Configuration
+    - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST
+      value: "lb.internal"
+    - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PORT
+      value: "6433"
+    - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER
+      value: "authentik-db-admin"
+    - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__NAME
+      value: "authentik"
+    - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: postgres-db-password-eso
+          key: authentik-db-password
     - name: AUTHENTIK_STORAGE__MEDIA__BACKEND
       value: "s3"
     - name: AUTHENTIK_STORAGE__MEDIA__S3__REGION
       value: "auto"
     - name: AUTHENTIK_STORAGE__MEDIA__S3__ENDPOINT
-      value: "https://32e21cb26175efbbdbd48a4ce2d76d39.r2.cloudflarestorage.com"
+      value: "https://s3-api.mcb-homelab.com"
     - name: AUTHENTIK_STORAGE__MEDIA__S3__BUCKET_NAME
       value: "authentik"
     - name: AUTHENTIK_STORAGE__MEDIA__S3__USE_SSL
@@ -64,17 +56,13 @@ global:
     - name: AUTHENTIK_STORAGE__MEDIA__S3__ACCESS_KEY
       valueFrom:
         secretKeyRef:
-          name: s3-client-id-eso
+          name: s3-client-credentials-eso
           key: s3-client-id
     - name: AUTHENTIK_STORAGE__MEDIA__S3__SECRET_KEY
       valueFrom:
         secretKeyRef:
-          name: s3-client-secret-eso
+          name: s3-client-credentials-eso
           key: s3-client-secret
-  securityContext:
-    runAsUser: 1000
-    runAsGroup: 1000
-    fsGroup: 1000
 
 authentik:
   log_level: error
@@ -84,24 +72,38 @@ authentik:
   redis: {}
 
 server:
+  service:
+    type: NodePort
   replicas: 1
   livelinessProbe:
     timeoutSeconds: 30
   readinessProbe:
     timeoutSeconds: 30
-  ingress:
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  autoscaling:
     enabled: true
-    ingressClassName: traefik
-    annotations:
-      cert-manager.io/cluster-issuer: "cloudflare-clusterissuer"
-      traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
-      traefik.ingress.kubernetes.io/router.tls: "true"
-    hosts:
-      - auth.mcb-svc.work
-    tls:
-      - secretName: cloudflare-wildcard-cert-tls
-        hosts:
-          - auth.mcb-svc.work
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+  # ingress:
+  #   enabled: true
+  #   ingressClassName: traefik
+  #   annotations:
+  #     cert-manager.io/cluster-issuer: "cloudflare-clusterissuer"
+  #     traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+  #     traefik.ingress.kubernetes.io/router.tls: "true"
+  #   hosts:
+  #     - auth.mcb-svc.work
+  #   tls:
+  #     - secretName: cloudflare-wildcard-cert-tls
+  #       hosts:
+  #         - auth.mcb-svc.work
   # add a tmpfs volume that will replace /dev/shm
   volumes:
     - name: devshm
@@ -122,23 +124,50 @@ server:
       volumeMounts:
         - name: devshm
           mountPath: /dev/shm
+
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  containerSecurityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+    seccompProfile:
+      type: RuntimeDefault
+
   affinity:
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:
           - matchExpressions:
-            - key: topology.kubernetes.io/region
+            - key: kubernetes.io/arch
               operator: In
               values:
-                - vn-prod-01
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 50
-          preference:
-            matchExpressions:
-              - key: topology.kubernetes.io/region
-                operator: In
-                values:
-                  - sg-prod-01
+                - amd64
 
+worker:
+  livenessProbe:
+    timeoutSeconds: 30
+  readinessProbe:
+    timeoutSeconds: 30
+  startupProbe:
+    timeoutSeconds: 30
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  containerSecurityContext:
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+    seccompProfile:
+      type: RuntimeDefault
 
 

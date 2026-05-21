@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: longhorn-system
+  name: storageclass-system
   labels:
-    kubernetes.io/metadata.name: longhorn-system
+    kubernetes.io/metadata.name: storageclass-system
     pod-security.kubernetes.io/audit: privileged
     pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/enforce-version: latest

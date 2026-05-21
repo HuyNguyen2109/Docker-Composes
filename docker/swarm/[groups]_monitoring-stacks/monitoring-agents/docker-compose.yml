@@ -1,0 +1,178 @@
+services:
+  alertmanager:
+    image: prom/alertmanager:${ALERTMANAGER_IMAGE_TAG}
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--cluster.listen-address=0.0.0.0:9094'
+      - '--cluster.peer=alertmanager:9094'
+      - '--cluster.gossip-interval=200ms'
+      - '--cluster.pushpull-interval=1m'
+      - '--web.external-url=http://alertmanager:9093'
+    networks:
+      - traefik-internetwork
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 5s
+      update_config:
+        parallelism: 1
+        delay: 10s
+      placement:
+        constraints:
+          - node.platform.os == linux
+          - node.role == manager
+    configs:
+      - source: alertmanager-conf
+        target: /etc/alertmanager/alertmanager.yml
+      - source: telegram-tmpl
+        target: /alertmanager/templates/telegram.tmpl
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:${CADVISOR_IMAGE_TAG}
+    deploy:
+      mode: global  # Runs on every node
+      restart_policy:
+        condition: any
+    networks:
+      monitoring-internetwork:
+        aliases:
+          - cadvisor
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/:/rootfs:ro"
+      - "/var/run:/var/run"
+      - "/sys:/sys:ro"
+      - "/var/lib/docker:/var/lib/docker:ro"
+    command: ["-docker_only"]
+  
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:${NODE_EXPORTER_IMAGE_TAG}
+    command:
+      - '--path.rootfs=/host'
+    networks:
+      monitoring-internetwork:
+        aliases:
+          - node-exporter
+    deploy:
+      mode: global
+      restart_policy:
+        condition: any
+    volumes:
+      - '/:/host:ro,rslave'
+
+  prometheus:
+    image: prom/prometheus:${PROMETHEUS_IMAGE_TAG}
+    user: root
+    networks:
+      monitoring-internetwork: {}
+      traefik-internetwork:
+        aliases:
+          - prometheus
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+    configs:
+      - source: prometheus-conf
+        target: /etc/prometheus/prometheus.yml
+      - source: prometheus-rules
+        target: /etc/prometheus/rules.yml
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.size=10GB'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+  
+  grafana:
+    image: grafana/grafana-oss:${GRAFANA_IMAGE_TAG}
+    networks:
+      db-internetwork: {}
+      traefik-internetwork:
+        aliases:
+          - grafana
+    configs:
+      - source: grafana-conf
+        target: /etc/grafana/grafana.ini
+    volumes:
+      - grafana_storage:/var/lib/grafana
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "256M"
+        reservations:
+          cpus: "0.125"  
+          memory: "128M"
+      update_config:
+        parallelism: 1
+        delay: 5s
+        failure_action: rollback
+        max_failure_ratio: 0.5
+      restart_policy:
+        condition: any
+      placement:
+        constraints:
+          - node.platform.os == linux
+          - node.role == worker
+          - node.labels.codename == ${SWARM_NODE_CODENAME}
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    networks:
+      traefik-internetwork:
+        aliases:
+          - uptime-kuma
+      monitoring-internetwork: {}
+      db-internetwork: {}
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.platform.os == linux
+          - node.role == worker
+      restart_policy:
+        condition: any
+    volumes:
+      - uptime_kuma_storage:/app/data
+
+configs:
+  grafana-conf:
+    external: true
+  prometheus-conf:
+    external: true
+  prometheus-rules:
+    external: true
+  alertmanager-conf:
+    external: true
+  telegram-tmpl:
+    external: true
+
+volumes:
+  prometheus-data:
+    driver: local
+  grafana_storage:
+    driver: local
+  uptime_kuma_storage:
+    driver: local
+
+networks:
+  monitoring-internetwork:
+    external: true
+  traefik-internetwork:
+    external: true
+  db-internetwork:
+    external: true

@@ -1,0 +1,85 @@
+# NOTE: The cattle-system namespace must use "privileged" PodSecurity enforcement.
+# Rancher requires root-level access and cannot run under the "restricted" policy.
+# Before deploying, apply the label:
+#   kubectl label --overwrite namespace cattle-system \
+#     pod-security.kubernetes.io/enforce=privileged \
+#     pod-security.kubernetes.io/enforce-version=latest
+bootstrapPassword: "SimplePassword"
+
+ingress:
+  enabled: false
+  # tls:
+  #   source: letsEncrypt
+
+# hostname: rancher.netbird.local
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+startupProbe:
+  timeoutSeconds: 10
+  periodSeconds: 5
+  failureThreshold: 60
+
+livenessProbe:
+  timeoutSeconds: 10
+  periodSeconds: 30
+  failureThreshold: 8
+
+readinessProbe:
+  timeoutSeconds: 10
+  periodSeconds: 30
+  failureThreshold: 8
+
+
+postDelete:
+  timeout: 600
+  namespaceList:
+    - cattle-fleet-system
+    - cattle-system
+    - rancher-operator-system
+    - cattle-fleet-local-system
+    - catlle-fleet-cluster-system
+    - cattle-global-data
+    - cattle-global-nt
+    - cattle-impersonation-system
+    - cattle-provisioning-capi-system
+    - cattle-ui-plugin-system
+  ignoreTimeoutError: true
+
+# letEncrypt:
+#   environment: production
+#   email: JohnasHuy21091996@gmail.com
+#   ingress:
+#     class: traefik
+
+replicas: 1
+antiAffinity: preferred
+topologyKey: kubernetes.io/hostname
+
+extraTolerations:
+- key: "CriticalAddonsOnly"
+  value: "true"
+  effect: "NoExecute"
+# Removed control-plane toleration: with 2 worker nodes (talos-01, talos-02),
+# Rancher replicas must not land on the control-plane (talos-00) as it causes
+# CPU saturation and leader election failures under load.
+
+service:
+  type: NodePort
+  # NOTE: The Rancher chart does NOT support setting NodePort via values.
+  # After deploying, patch the HTTPS NodePort manually:
+  #   kubectl patch svc rancher -n cattle-system --type='json' \
+  #     -p='[{"op":"replace","path":"/spec/ports/1/nodePort","value":30001}]'
+  # Resulting ports: 80:<auto>/TCP, 443:30001/TCP
+
+# extraNodeSelectorTerms:
+#   - key: "node.cert-manager"
+#     operator: In
+#     values:
+#       - "true"

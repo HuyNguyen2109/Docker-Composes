@@ -1,0 +1,30 @@
+replicas: 1
+podDisruptionBudget:
+  enabled: false
+defaultArgs:
+  - --cert-dir=/tmp
+  - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+  - --kubelet-insecure-tls
+  - --metric-resolution=15s
+  - --v=4
+resources:
+  requests:
+    cpu: 100m
+    memory: 200Mi
+  limits:
+    cpu: 200m
+    memory: 400Mi
+nodeSelector: {}
+  # node.cert-manager: "true"
+tolerations:
+- key: "CriticalAddonsOnly"
+  value: "true"
+  effect: "NoExecute"
+- key: "node-role.kubernetes.io/control-plane"
+  operator: "Exists"
+  effect: "NoSchedule"
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
