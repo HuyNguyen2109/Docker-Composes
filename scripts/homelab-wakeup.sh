@@ -12,11 +12,9 @@
 #   proxmox-00  builtin eno1 (igb):  14:02:ec:49:37:30  (permanent MAC, no bond override)
 #   proxmox-00  USB r8152:           c8:4d:44:23:3e:49
 #
-#   talos-01    bond0 MAC:           8a:c0:fc:36:31:75  ← USE THIS for WOL
-#               bond mode active-backup WITHOUT fail_over_mac — the bonding driver
-#               reprograms enp0s31f6's MAC to the bond MAC. The NIC's WOL filter
-#               tracks this change, so magic packets MUST be sent to the bond MAC.
-#               (Sending to the permanent MAC 6c:4b:90:3b:d6:1b will be ignored.)
+#   talos-01    builtin enp0s31f6:   6c:4b:90:3b:d6:1b  (permanent MAC — correct)
+#               bond mode active-backup WITH fail_over_mac active — each NIC keeps
+#               its own permanent MAC, so WOL to permanent MAC works.
 #   talos-01    USB adapter:         c8:4d:44:23:3e:3a
 #
 #   talos-02    builtin enp0s31f6:   6c:4b:90:5e:c3:9e  (permanent MAC — correct)
@@ -41,7 +39,7 @@ set -uo pipefail
 # Format: "name builtin_mac usb_mac"
 HOSTS=(
   "proxmox-00  14:02:ec:49:37:30  c8:4d:44:23:3e:49"
-  "talos-01    8a:c0:fc:36:31:75  c8:4d:44:23:3e:3a"
+  "talos-01    6c:4b:90:3b:d6:1b  c8:4d:44:23:3e:3a"
   "talos-02    6c:4b:90:5e:c3:9e  c8:4d:44:23:3e:4a"
 )
 WOL_IFACE="br0"
