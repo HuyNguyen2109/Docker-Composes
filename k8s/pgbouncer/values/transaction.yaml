@@ -192,7 +192,7 @@ config:
     '*':
       host: lb.internal
       port: 6432
-      pool_mode: session
+      pool_mode: transaction
     authentik:
       host: lb.internal
       port: 6432
