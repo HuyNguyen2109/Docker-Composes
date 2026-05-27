@@ -13,8 +13,8 @@
 #   proxmox-00  USB r8152:           c8:4d:44:23:3e:49
 #
 #   talos-01    builtin enp0s31f6:   6c:4b:90:3b:d6:1b  (permanent MAC — correct)
-#               bond mode active-backup WITH fail_over_mac active — each NIC keeps
-#               its own permanent MAC, so WOL to permanent MAC works.
+#               bond mode active-backup, fail_over_mac=none, bond MAC 8a:c0:fc:36:31:75
+#               WOL always targets the NIC's burned-in hardware MAC (unaffected by bonding)
 #   talos-01    USB adapter:         c8:4d:44:23:3e:3a
 #
 #   talos-02    builtin enp0s31f6:   6c:4b:90:5e:c3:9e  (permanent MAC — correct)
