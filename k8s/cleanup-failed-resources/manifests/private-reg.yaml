@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: docker-reg-creds
+  namespace: kube-system
+data:
+  .dockerconfigjson: >-
+    eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJtY2JvdXJkZXV4IiwicGFzc3dvcmQiOiJkY2tyX3BhdF9YZmNORmZpR1NtQndPekttR2dOSFpqZVZGUEUiLCJlbWFpbCI6ImpvaG5hc2h1eTIxMDkxOTk2QGdtYWlsLmNvbSIsImF1dGgiOiJiV05pYjNWeVpHVjFlRHBrWTJ0eVgzQmhkRjlZWm1OT1JtWnBSMU50UW5kUGVrdHRSMmRPU0ZwcVpWWkdVRVU9In19fQ==
+type: kubernetes.io/dockerconfigjson

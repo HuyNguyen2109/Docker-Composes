@@ -66,6 +66,8 @@ spec:
         spec:
           serviceAccountName: cleanup-sa
           restartPolicy: OnFailure
+          imagePullSecrets:
+            - name: docker-reg-creds
           containers:
             - name: kubectl
               image: bitnami/kubectl:latest
@@ -135,6 +137,8 @@ spec:
         spec:
           serviceAccountName: cleanup-sa
           restartPolicy: OnFailure
+          imagePullSecrets:
+            - name: docker-reg-creds
           containers:
             - name: kubectl
               image: bitnami/kubectl:latest
