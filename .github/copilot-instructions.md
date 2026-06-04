@@ -9,6 +9,7 @@
     * talos-01 (bare-metal): user ubuntu, IP: 192.168.1.12, SSH key auth, password login disabled
     * talos-02 (bare-metal): user ubuntu, IP: 192.168.1.13, SSH key auth, password login disabled
   + tower.local (unRAID server): user root, IP: 192.168.1.40, password login enabled, password stored at $HOME/ssh-keys/.unraid-password.txt
+  + talos-cloud-00 (14.225.220.145) & talos-cloud-01 (103.167.150.158): user root, SSH key auth and stored at $HOME/ssh-key/oracle, password auth disabled
 
 ## Repository Overview
 
