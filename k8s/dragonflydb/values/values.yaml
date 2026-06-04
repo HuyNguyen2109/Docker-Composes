@@ -4,9 +4,7 @@ commonLabels:
   app.kubernetes.io/part-of: kube-service-monitoring
 
 storage:
-  enabled: true
-  requests: 2Gi # Set a desired volume size for PVC.
-  storageClass: longhorn
+  enabled: false
 
 extraArgs:
   - --logtostderr
