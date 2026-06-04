@@ -24,7 +24,7 @@ redis:
   enabled: false
 externalRedis:
   enabled: true
-  host: "dragonfly.databases.svc.cluster.local"
+  host: "unraid.internal"
   port: 6379
   existingSecret: argocd-secret-eso
 
