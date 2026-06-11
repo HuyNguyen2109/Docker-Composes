@@ -9,29 +9,12 @@ services:
     - published: 53
       target: 53
       protocol: udp
-      mode: host
     - published: 53
       target: 53
       protocol: tcp
-      mode: host
     volumes:
       - adguard-work:/opt/adguardhome/work
       - adguard-config:/opt/adguardhome/conf
-    deploy:
-      labels:
-        - "traefik.enable=true"
-        # Single-domain for UI + DoH
-        - "traefik.http.routers.adguard.rule=Host(`adguard.mcb-svc.work`)"
-        - "traefik.http.routers.adguard.entrypoints=websecure"
-        - "traefik.http.routers.adguard.tls.certresolver=letsencrypt"
-        - "traefik.http.routers.adguard.service=adguard"
-        - "traefik.http.services.adguard.loadbalancer.server.port=3000"
-
-        - "traefik.http.routers.adguard-doh.rule=Host(`adguard.mcb-svc.work`) && PathPrefix(`/dns-query`)"
-        - "traefik.http.routers.adguard-doh.entrypoints=websecure"
-        - "traefik.http.routers.adguard-doh.tls.certresolver=letsencrypt"
-        - "traefik.http.routers.adguard-doh.service=adguard-doh"
-        - "traefik.http.services.adguard-doh.loadbalancer.server.port=3000"
 
 volumes:
   adguard-work:

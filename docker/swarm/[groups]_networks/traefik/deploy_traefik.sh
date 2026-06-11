@@ -6,7 +6,7 @@ warn() { printf '\033[1;33m[WARN]\033[0m %s\n' "$*"; }
 # ----------------------
 # Define stack name (change this as needed)
 STACK_NAME="traefik"
-export DOCKER_BASED_DIR="/mnt/docker-datastore/data"
+export DOCKER_BASED_DIR="/mnt/docker-local"
 # === Parse command-line arguments ===
 SWARM_NODE_CODENAME=""
 

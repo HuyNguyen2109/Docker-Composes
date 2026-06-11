@@ -1,87 +1,62 @@
-version: "3.9"
-
 services:
-  management:
-    image: netbirdio/management:latest
-    depends_on:
-      - dashboard
-    command: [
-      "--port", "33073",
-      "--log-file", "console",
-      "--log-level", "info",
-      "--disable-anonymous-metrics=true",
-      "--single-account-mode-domain=$NETBIRD_DOMAIN",
-      "--dns-domain=$NETBIRD_DOMAIN"
-      ]
+  dashboard:
+    image: netbirdio/dashboard:${NETBIRD_DASHBOARD_TAG}
     networks:
-      - mesh-internetwork
       - traefik-internetwork
-    configs:
-      - source: management-config-json
-        target: /etc/netbird/management.json
     environment:
-      # DB backend
-      - NETBIRD_STORE_CONFIG_ENGINE=postgres
-      - NETBIRD_STORE_ENGINE_POSTGRES_DSN=${NETBIRD_STORE_ENGINE_POSTGRES_DSN}
-      
-      # OIDC (Authentik integration)
-      - NETBIRD_AUTH_OIDC_ISSUER=${NETBIRD_AUTH_OIDC_ISSUER}
-      - NETBIRD_AUTH_OIDC_CLIENT_ID=${NETBIRD_AUTH_OIDC_CLIENT_ID}
-      - NETBIRD_AUTH_OIDC_CLIENT_SECRET=${NETBIRD_AUTH_OIDC_CLIENT_SECRET}
-      - NETBIRD_AUTH_OIDC_REDIRECT_URL=https://api.${NETBIRD_DOMAIN}
+      - NETBIRD_MGMT_API_ENDPOINT=https://${NETBIRD_DOMAIN}
+      - NETBIRD_MGMT_GRPC_API_ENDPOINT=https://${NETBIRD_DOMAIN}
+      - AUTH_AUDIENCE=netbird-dashboard
+      - AUTH_CLIENT_ID=netbird-dashboard
+      - AUTH_CLIENT_SECRET=
+      - AUTH_AUTHORITY=https://${NETBIRD_DOMAIN}/oauth2
+      - USE_AUTH0=false
+      - AUTH_SUPPORTED_SCOPES=openid profile email groups
+      - AUTH_REDIRECT_URI=/nb-auth
+      - AUTH_SILENT_REDIRECT_URI=/nb-silent-auth
+      - NGINX_SSL_PORT=443
+      - LETSENCRYPT_DOMAIN=none
     deploy:
+      mode: replicated
       replicas: 1
       placement:
-        constraints: [node.labels.type == constructor]
-      labels:
-        - "traefik.enable=true"
-        # gRPC Management API
-        - "traefik.http.routers.netbird-mgmt.rule=Host(`api.${NETBIRD_DOMAIN}`)"
-        - "traefik.http.routers.netbird-mgmt.entrypoints=websecure"
-        - "traefik.http.routers.netbird-mgmt.tls=true"
-        - "traefik.http.routers.netbird-mgmt.tls.domains[0].main=${NETBIRD_DOMAIN}"
-        - "traefik.http.routers.netbird-mgmt.tls.domains[0].sans=*.${NETBIRD_DOMAIN}"
-        - "traefik.http.routers.netbird-mgmt.tls.certresolver=letsencrypt"
-        - "traefik.http.services.netbird-mgmt.loadbalancer.server.port=33073"
-
-  signal:
-    image: netbirdio/signal:latest
-    networks:
-      - mesh-internetwork
-    deploy:
-      mode: global
+        constraints:
+          - node.labels.codename == ${SWARM_NODE_CODENAME}
       restart_policy:
         condition: on-failure
-    ports:
-      - "10000:10000/udp"
 
-  dashboard:
-    image: netbirdio/dashboard:latest
+  netbird-server:
+    image: netbirdio/netbird-server:${NETBIRD_SERVER_TAG}
     networks:
-      - mesh-internetwork
       - traefik-internetwork
-    environment:
-      - NETBIRD_MANAGEMENT_URL=https://api.${NETBIRD_DOMAIN}
+    ports:
+      - target: 3478
+        published: 3478
+        protocol: udp
+        mode: host
+    volumes:
+      - netbird-data:/var/lib/netbird
+    configs:
+      - source: netbird-config-yaml
+        target: /etc/netbird/config.yaml
+    command: ["--config", "/etc/netbird/config.yaml"]
     deploy:
+      mode: replicated
       replicas: 1
       placement:
-        constraints: [node.labels.type == constructor]
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.netbird-dashboard.rule=Host(`dashboard.${NETBIRD_DOMAIN}`)"
-        - "traefik.http.routers.netbird-dashboard.entrypoints=websecure"
-        - "traefik.http.routers.netbird-dashboard.tls=true"
-        - "traefik.http.routers.netbird-dashboard.tls.domains[0].main=${NETBIRD_DOMAIN}"
-        - "traefik.http.routers.netbird-dashboard.tls.domains[0].sans=*.${NETBIRD_DOMAIN}"
-        - "traefik.http.routers.netbird-dashboard.tls.certresolver=letsencrypt"
-        - "traefik.http.services.netbird-dashboard.loadbalancer.server.port=80"
+        constraints:
+          - node.labels.codename == ${SWARM_NODE_CODENAME}
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  netbird-data:
+    driver: local
 
 networks:
-  mesh-internetwork:
-    external: true
   traefik-internetwork:
     external: true
 
 configs:
-  management-config-json:
+  netbird-config-yaml:
     external: true
