@@ -23,7 +23,7 @@ services:
           - portainer
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${DOCKER_BASED_DIR}/portainer:/data
+      - portainer-data:/data
     deploy:
       restart_policy:
         condition: any
@@ -40,3 +40,7 @@ services:
 networks:
   traefik-internetwork:
     external: true
+
+volumes:
+  portainer-data:
+    name: portainer-data
