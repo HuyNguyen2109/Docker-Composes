@@ -1,5 +1,6 @@
 *.env
 .idea
+*.log
 # Local Terraform state
 *.tfstate
 *.tfstate.*
@@ -31,6 +32,7 @@ id_rsa.pub
 # Local working dir
 .terraform/
 .terraform.lock.hcl
+.a5c
 
 # Ignore VSCode and IDE configs
 .vscode/
