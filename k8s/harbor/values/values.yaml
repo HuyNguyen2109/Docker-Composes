@@ -36,7 +36,7 @@ persistence:
       existingSecret: harbor-secrets-eso
       bucket: harbor
       region: auto
-      regionendpoint: https://s3-api.mcb-homelab.com
+      regionendpoint: https://s3.mcb-homelab.com
 
 
 existingSecretSecretKey: harbor-secrets-eso

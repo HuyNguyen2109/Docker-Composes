@@ -48,7 +48,7 @@ global:
     - name: AUTHENTIK_STORAGE__MEDIA__S3__REGION
       value: "auto"
     - name: AUTHENTIK_STORAGE__MEDIA__S3__ENDPOINT
-      value: "https://s3-api.mcb-homelab.com"
+      value: "https://s3.mcb-homelab.com"
     - name: AUTHENTIK_STORAGE__MEDIA__S3__BUCKET_NAME
       value: "authentik"
     - name: AUTHENTIK_STORAGE__MEDIA__S3__USE_SSL
