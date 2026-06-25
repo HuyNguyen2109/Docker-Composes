@@ -152,15 +152,14 @@ Bi-weekly UPS deep battery exercise simulation via **NUT (Network UPS Tools)**.
 
 ## Infrastructure Nodes
 
-| Hostname        | Type              | User     | Auth                                   | Notes                           |
-|-----------------|-------------------|----------|----------------------------------------|----------------------------------|
-| proxmox-00      | Bare-metal hypervisor | root | SSH key (no password)               | Proxmox host                     |
-| talos-00        | VM (control-plane) | ubuntu  | SSH key @ `$HOME/ssh-keys/homelab-linux` | Kubernetes node                |
-| talos-01        | Bare-metal (CP)    | ubuntu  | SSH key @ `$HOME/ssh-keys/homelab-linux` | Kubernetes node                |
-| talos-02        | Bare-metal (CP)    | ubuntu  | SSH key @ `$HOME/ssh-keys/homelab-linux` | Kubernetes node                |
-| tower.local     | unRAID server      | root    | SSH key @ `$HOME/ssh-keys/homelab-linux` | Storage/NAS               |
-| talos-cloud-00  | Cloud VM           | root    | SSH key @ `$HOME/ssh-keys/oracle`      | Cloud node                       |
-| talos-cloud-01  | Cloud VM           | root    | SSH key @ `$HOME/ssh-keys/oracle`      | Cloud node                       |
+| Hostname        | Type              | User     | Auth                                     | Notes                           |
+|-----------------|-------------------|----------|------------------------------------------|---------------------------------|
+| proxmox-00      | Bare-metal hypervisor | root | SSH key (no password)                    | Proxmox host                    |
+| talos-00        | VM (control-plane) | ubuntu  | SSH key @ `$HOME/ssh-keys/homelab-linux` | Kubernetes node                 |
+| talos-01        | Bare-metal (CP)    | ubuntu  | SSH key @ `$HOME/ssh-keys/homelab-linux` | Kubernetes node                 |
+| talos-02        | Bare-metal (CP)    | ubuntu  | SSH key @ `$HOME/ssh-keys/homelab-linux` | Kubernetes node                 |
+| tower.local     | unRAID server      | root    | SSH key @ `$HOME/ssh-keys/homelab-linux` | Storage/NAS                     |
+| talos-cloud-00  | Cloud VM           | root    | SSH key @ `$HOME/ssh-keys/oracle`        | Cloud node                      |
 
 > **Note:** Actual IP addresses have been redacted; they are stored only in
 > `.github/copilot-instructions.md`.

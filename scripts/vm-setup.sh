@@ -5,11 +5,14 @@
 #
 # REQUIRED ENVIRONMENT VARIABLES
 # ────────────────────────────────────────────────────────────────────────────
-# VAULT
+# VAULT (must be set in ~/.bashrc on the target machine)
 #   VAULT_ADDR          - Vault server address (e.g. https://vault.example.com:8200)
 #   VAULT_TOKEN         - Authentication token for Vault CLI
 #
-# AZURE_CLI
+# VAULT PATH
+#   kubernetes/azure    - Vault KV v2 path containing tenant_id, client_id, client_secret
+#
+# AZURE (auto-fetched from Vault, written to ~/.bashrc by Section 8)
 #   AZURE_TENANT_ID     - Azure Active Directory tenant ID
 #   AZURE_CLIENT_ID     - Service principal client/app ID
 #   AZURE_CLIENT_SECRET - Service principal secret (for non-interactive auth)
@@ -395,11 +398,83 @@ install_base() {
 }
 
 # =============================================================================
-# SECTION 4 — DOCKER  (official Docker documentation)
+# SECTION 4 — HASHICORP VAULT  (official HashiCorp repositories)
+# =============================================================================
+
+install_vault() {
+  tui_header "HashiCorp Vault (Official Repo)" 4
+
+  if command -v vault &>/dev/null; then
+    local current_ver
+    current_ver=$(vault version 2>/dev/null | awk '{print $2}' || echo "unknown")
+    echo -e "  ${YELLOW}${WARN}${RESET}  Vault already installed (${current_ver}). Skipping."
+    INSTALL_STATUS["vault"]="already-installed"
+    INSTALL_VERSION["vault"]="${current_ver}"
+    return 0
+  fi
+
+  case "${OS_TYPE}" in
+    debian)
+      run_cmd "Adding HashiCorp GPG key" bash -c "
+        curl -fsSL https://apt.releases.hashicorp.com/gpg \
+          | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+      " || true
+      run_cmd "Adding HashiCorp APT repo" bash -c "
+        echo \"deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \\
+          https://apt.releases.hashicorp.com \\
+          \$(lsb_release -cs) main\" \\
+          | tee /etc/apt/sources.list.d/hashicorp.list
+      " || true
+      run_cmd "Updating package index (vault)" apt-get update || true
+      run_cmd "Installing vault" apt-get install -y vault || true
+      ;;
+    rhel)
+      run_cmd "Installing yum-utils" bash -c "${PKG_INSTALL} yum-utils" || true
+      run_cmd "Adding HashiCorp yum repo" bash -c "
+        yum-config-manager --add-repo \
+          https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+      " || true
+      run_cmd "Installing vault" bash -c "${PKG_INSTALL} vault" || true
+      ;;
+    arch|suse)
+      case "${OS_TYPE}" in
+        arch) run_cmd "Installing unzip" pacman -S --noconfirm --needed unzip || true ;;
+        suse) run_cmd "Installing unzip" zypper install -y unzip || true ;;
+      esac
+      run_cmd "Downloading and verifying Vault binary" bash -c "
+        VAULT_VER=\$(curl -fsSL https://api.releases.hashicorp.com/v1/releases/vault/latest \
+          | grep -o '\"version\":\"[^\"]*\"' | head -1 | cut -d'\"' -f4)
+        ARCH_NAME=\"amd64\"
+        case \"\$(uname -m)\" in
+          aarch64|arm64) ARCH_NAME=\"arm64\" ;;
+          arm*)          ARCH_NAME=\"arm\"   ;;
+        esac
+        VAULT_ZIP=\"vault_\${VAULT_VER}_linux_\${ARCH_NAME}.zip\"
+        curl -fsSL \"https://releases.hashicorp.com/vault/\${VAULT_VER}/\${VAULT_ZIP}\" \
+          -o \"/tmp/\${VAULT_ZIP}\"
+        curl -fsSL \"https://releases.hashicorp.com/vault/\${VAULT_VER}/vault_\${VAULT_VER}_SHA256SUMS\" \
+          -o /tmp/vault_SHA256SUMS
+        cd /tmp
+        grep \"\${VAULT_ZIP}\" vault_SHA256SUMS | sha256sum --check --status
+        unzip -o \"/tmp/\${VAULT_ZIP}\" vault -d /usr/local/bin/
+        chmod +x /usr/local/bin/vault
+        rm -f \"/tmp/\${VAULT_ZIP}\" /tmp/vault_SHA256SUMS
+      " || true
+      ;;
+  esac
+
+  local installed_ver
+  installed_ver=$(vault version 2>/dev/null | awk '{print $2}' || echo "unknown")
+  INSTALL_STATUS["vault"]="installed"
+  INSTALL_VERSION["vault"]="${installed_ver}"
+}
+
+# =============================================================================
+# SECTION 5 — DOCKER  (official Docker documentation)
 # =============================================================================
 
 install_docker() {
-  tui_header "Docker Engine (Official)" 4
+  tui_header "Docker Engine (Official)" 5
 
   if command -v docker &>/dev/null; then
     local current_ver
@@ -412,7 +487,6 @@ install_docker() {
 
   case "${OS_TYPE}" in
     debian)
-      # Remove old conflicting packages
       run_cmd "Removing conflicting packages" bash -c "
         for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do
           apt-get remove -y \"\${pkg}\" 2>/dev/null || true
@@ -474,11 +548,11 @@ install_docker() {
 }
 
 # =============================================================================
-# SECTION 5 — KUBECTL  (official Kubernetes repositories)
+# SECTION 6 — KUBECTL  (official Kubernetes repositories)
 # =============================================================================
 
 install_kubectl() {
-  tui_header "kubectl (Official Kubernetes)" 5
+  tui_header "kubectl (Official Kubernetes)" 6
 
   if command -v kubectl &>/dev/null; then
     local current_ver
@@ -540,11 +614,11 @@ REPO
 }
 
 # =============================================================================
-# SECTION 6 — HELM  (official get-helm-3 script)
+# SECTION 7 — HELM  (official get-helm-3 script)
 # =============================================================================
 
 install_helm() {
-  tui_header "Helm (Official Script)" 6
+  tui_header "Helm (Official Script)" 7
 
   if command -v helm &>/dev/null; then
     local current_ver
@@ -571,11 +645,11 @@ install_helm() {
 }
 
 # =============================================================================
-# SECTION 7 — AZURE CLI  (official Microsoft repository)
+# SECTION 8 — AZURE CLI + VAULT SECRETS
 # =============================================================================
 
 install_azure_cli() {
-  tui_header "Azure CLI (Official Microsoft Repo)" 7
+  tui_header "Azure CLI + Vault Secrets" 8
 
   if command -v az &>/dev/null; then
     local current_ver
@@ -585,25 +659,22 @@ install_azure_cli() {
     echo -e "  ${YELLOW}${WARN}${RESET}  Azure CLI already installed (${current_ver}). Skipping."
     INSTALL_STATUS["azure-cli"]="already-installed"
     INSTALL_VERSION["azure-cli"]="${current_ver}"
-    return 0
-  fi
-
-  case "${OS_TYPE}" in
-    debian)
-      # Microsoft's official one-liner installer (handles any Debian/Ubuntu version)
-      local tmp_script
-      tmp_script=$(mktemp /tmp/installer.XXXXXX.sh)
-      chmod 700 "${tmp_script}"
-      run_cmd "Downloading Microsoft install script" \
-        curl -fsSL https://aka.ms/InstallAzureCLIDeb -o "${tmp_script}" || true
-      run_cmd "Running Azure CLI installer" bash "${tmp_script}" || true
-      rm -f "${tmp_script}"
-      ;;
-    rhel)
-      run_cmd "Importing Microsoft GPG key" \
-        rpm --import https://packages.microsoft.com/keys/microsoft.asc || true
-      run_cmd "Adding Azure CLI RPM repo" bash -c "
-        cat > /etc/yum.repos.d/azure-cli.repo <<'REPO'
+  else
+    case "${OS_TYPE}" in
+      debian)
+        local tmp_script
+        tmp_script=$(mktemp /tmp/installer.XXXXXX.sh)
+        chmod 700 "${tmp_script}"
+        run_cmd "Downloading Microsoft install script" \
+          curl -fsSL https://aka.ms/InstallAzureCLIDeb -o "${tmp_script}" || true
+        run_cmd "Running Azure CLI installer" bash "${tmp_script}" || true
+        rm -f "${tmp_script}"
+        ;;
+      rhel)
+        run_cmd "Importing Microsoft GPG key" \
+          rpm --import https://packages.microsoft.com/keys/microsoft.asc || true
+        run_cmd "Adding Azure CLI RPM repo" bash -c "
+          cat > /etc/yum.repos.d/azure-cli.repo <<'REPO'
 [azure-cli]
 name=Azure CLI
 baseurl=https://packages.microsoft.com/yumrepos/azure-cli
@@ -611,107 +682,84 @@ enabled=1
 gpgcheck=1
 gpgkey=https://packages.microsoft.com/keys/microsoft.asc
 REPO
-      " || true
-      run_cmd "Installing azure-cli" bash -c "${PKG_INSTALL} azure-cli" || true
-      ;;
-    arch)
-      # azure-cli is not in official Arch repos; install via pip
-      run_cmd "Installing azure-cli via pip3" bash -c "
-        pip3 install --break-system-packages azure-cli 2>/dev/null \
-          || pip3 install azure-cli || true
-      " || true
-      ;;
-    suse)
-      run_cmd "Importing Microsoft GPG key" \
-        rpm --import https://packages.microsoft.com/keys/microsoft.asc || true
-      run_cmd "Adding Azure CLI zypper repo" bash -c "
-        zypper addrepo --gpgcheck \
-          https://packages.microsoft.com/yumrepos/azure-cli azure-cli || true
-      " || true
-      run_cmd "Installing azure-cli" \
-        zypper install -y --from azure-cli azure-cli || true
-      ;;
-  esac
+        " || true
+        run_cmd "Installing azure-cli" bash -c "${PKG_INSTALL} azure-cli" || true
+        ;;
+      arch)
+        run_cmd "Installing azure-cli via pip3" bash -c "
+          pip3 install --break-system-packages azure-cli 2>/dev/null \
+            || pip3 install azure-cli || true
+        " || true
+        ;;
+      suse)
+        run_cmd "Importing Microsoft GPG key" \
+          rpm --import https://packages.microsoft.com/keys/microsoft.asc || true
+        run_cmd "Adding Azure CLI zypper repo" bash -c "
+          zypper addrepo --gpgcheck \
+            https://packages.microsoft.com/yumrepos/azure-cli azure-cli || true
+        " || true
+        run_cmd "Installing azure-cli" \
+          zypper install -y --from azure-cli azure-cli || true
+        ;;
+    esac
 
-  local installed_ver
-  installed_ver=$(az version 2>/dev/null \
-    | grep '"azure-cli"' | awk '{print $2}' | tr -d '",' \
-    || echo "unknown")
-  INSTALL_STATUS["azure-cli"]="installed"
-  INSTALL_VERSION["azure-cli"]="${installed_ver}"
-}
-
-# =============================================================================
-# SECTION 8 — HASHICORP VAULT  (official HashiCorp repositories)
-# =============================================================================
-
-install_vault() {
-  tui_header "HashiCorp Vault (Official Repo)" 8
-
-  if command -v vault &>/dev/null; then
-    local current_ver
-    current_ver=$(vault version 2>/dev/null | awk '{print $2}' || echo "unknown")
-    echo -e "  ${YELLOW}${WARN}${RESET}  Vault already installed (${current_ver}). Skipping."
-    INSTALL_STATUS["vault"]="already-installed"
-    INSTALL_VERSION["vault"]="${current_ver}"
-    return 0
+    local installed_ver
+    installed_ver=$(az version 2>/dev/null \
+      | grep '"azure-cli"' | awk '{print $2}' | tr -d '",' \
+      || echo "unknown")
+    INSTALL_STATUS["azure-cli"]="installed"
+    INSTALL_VERSION["azure-cli"]="${installed_ver}"
   fi
 
-  case "${OS_TYPE}" in
-    debian)
-      run_cmd "Adding HashiCorp GPG key" bash -c "
-        curl -fsSL https://apt.releases.hashicorp.com/gpg \
-          | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-      " || true
-      run_cmd "Adding HashiCorp APT repo" bash -c "
-        echo \"deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \\
-          https://apt.releases.hashicorp.com \\
-          \$(lsb_release -cs) main\" \\
-          | tee /etc/apt/sources.list.d/hashicorp.list
-      " || true
-      run_cmd "Updating package index (vault)" apt-get update || true
-      run_cmd "Installing vault" apt-get install -y vault || true
-      ;;
-    rhel)
-      run_cmd "Installing yum-utils" bash -c "${PKG_INSTALL} yum-utils" || true
-      run_cmd "Adding HashiCorp yum repo" bash -c "
-        yum-config-manager --add-repo \
-          https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
-      " || true
-      run_cmd "Installing vault" bash -c "${PKG_INSTALL} vault" || true
-      ;;
-    arch|suse)
-      # Ensure unzip is available before extraction
-      case "${OS_TYPE}" in
-        arch) run_cmd "Installing unzip" pacman -S --noconfirm --needed unzip || true ;;
-        suse) run_cmd "Installing unzip" zypper install -y unzip || true ;;
-      esac
-      run_cmd "Downloading and verifying Vault binary" bash -c "
-        VAULT_VER=\$(curl -fsSL https://api.releases.hashicorp.com/v1/releases/vault/latest \
-          | grep -o '\"version\":\"[^\"]*\"' | head -1 | cut -d'\"' -f4)
-        ARCH_NAME=\"amd64\"
-        case \"\$(uname -m)\" in
-          aarch64|arm64) ARCH_NAME=\"arm64\" ;;
-          arm*)          ARCH_NAME=\"arm\"   ;;
-        esac
-        VAULT_ZIP=\"vault_\${VAULT_VER}_linux_\${ARCH_NAME}.zip\"
-        curl -fsSL \"https://releases.hashicorp.com/vault/\${VAULT_VER}/\${VAULT_ZIP}\" \
-          -o \"/tmp/\${VAULT_ZIP}\"
-        curl -fsSL \"https://releases.hashicorp.com/vault/\${VAULT_VER}/vault_\${VAULT_VER}_SHA256SUMS\" \
-          -o /tmp/vault_SHA256SUMS
-        cd /tmp
-        grep \"\${VAULT_ZIP}\" vault_SHA256SUMS | sha256sum --check --status
-        unzip -o \"/tmp/\${VAULT_ZIP}\" vault -d /usr/local/bin/
-        chmod +x /usr/local/bin/vault
-        rm -f \"/tmp/\${VAULT_ZIP}\" /tmp/vault_SHA256SUMS
-      " || true
-      ;;
-  esac
+  # Fetch Azure secrets from Vault and write to ~/.bashrc
+  echo ""
+  echo -e "  ${GRAY}──────────────────────────────────────────────────────${RESET}"
+  echo -e "  ${GRAY}Fetching Azure secrets from Vault...${RESET}"
 
-  local installed_ver
-  installed_ver=$(vault version 2>/dev/null | awk '{print $2}' || echo "unknown")
-  INSTALL_STATUS["vault"]="installed"
-  INSTALL_VERSION["vault"]="${installed_ver}"
+  local bashrc="${HOME}/.bashrc"
+  [[ -f "$bashrc" ]] && set +u && source "$bashrc" && set -u
+
+  local vault_ok=true
+  if ! command -v vault &>/dev/null; then
+    echo -e "  ${YELLOW}${WARN}${RESET}  vault CLI not available, skipping Azure secret fetch."
+    vault_ok=false
+  elif [[ -z "${VAULT_ADDR:-}" ]]; then
+    echo -e "  ${YELLOW}${WARN}${RESET}  VAULT_ADDR not set, skipping Azure secret fetch."
+    vault_ok=false
+  elif [[ -z "${VAULT_TOKEN:-}" ]]; then
+    echo -e "  ${YELLOW}${WARN}${RESET}  VAULT_TOKEN not set, skipping Azure secret fetch."
+    vault_ok=false
+  fi
+
+  if [[ "$vault_ok" == "true" ]]; then
+    export VAULT_ADDR VAULT_TOKEN
+    echo -e "  ${GRAY}Vault: ${VAULT_ADDR}${RESET}"
+    echo -e "  ${GRAY}Path:  kubernetes/azure${RESET}"
+
+    local tid cid cs
+    tid=$(vault kv get -field=AZURE_TENANT_ID kubernetes/azure 2>/dev/null) || true
+    cid=$(vault kv get -field=AZURE_CLIENT_ID kubernetes/azure 2>/dev/null) || true
+    cs=$(vault kv get -field=AZURE_CLIENT_SECRET kubernetes/azure 2>/dev/null) || true
+
+    if [[ -z "$tid" || -z "$cid" || -z "$cs" ]]; then
+      echo -e "  ${YELLOW}${WARN}${RESET}  Could not read one or more Azure secrets from Vault."
+    else
+      local added=0
+      if ! grep -q '^export AZURE_TENANT_ID=' "$bashrc" 2>/dev/null; then
+        echo "export AZURE_TENANT_ID='${tid}'" >> "$bashrc"
+        ((added++))
+      fi
+      if ! grep -q '^export AZURE_CLIENT_ID=' "$bashrc" 2>/dev/null; then
+        echo "export AZURE_CLIENT_ID='${cid}'" >> "$bashrc"
+        ((added++))
+      fi
+      if ! grep -q '^export AZURE_CLIENT_SECRET=' "$bashrc" 2>/dev/null; then
+        echo "export AZURE_CLIENT_SECRET='${cs}'" >> "$bashrc"
+        ((added++))
+      fi
+      echo -e "  ${GREEN}${CHECK}${RESET} Azure secrets written to ${bashrc} (${added} new variables)"
+    fi
+  fi
 }
 
 # =============================================================================
@@ -841,13 +889,21 @@ install_pg_client() {
 
   case "${OS_TYPE}" in
     debian)
-      # Use official PostgreSQL Global Development Group repo for latest version
-      run_cmd "Adding PGDG APT key" bash -c "
-        curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
-          | gpg --dearmor -o /usr/share/keyrings/postgresql-keyring.gpg
+      local pgdg_key="/usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg"
+      if [[ ! -f "$pgdg_key" ]]; then
+        pgdg_key="/usr/share/keyrings/postgresql-keyring.gpg"
+        run_cmd "Adding PGDG APT key" bash -c "
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | gpg --dearmor -o \"${pgdg_key}\"
+        " || true
+      fi
+      # Remove any stale PGDG source entries to avoid Signed-By conflicts
+      run_cmd "Cleaning stale PGDG sources" bash -c "
+        rm -f /etc/apt/sources.list.d/pgdg.list /etc/apt/sources.list.d/postgresql.list
+        sed -i '/apt.postgresql.org/d' /etc/apt/sources.list 2>/dev/null || true
       " || true
       run_cmd "Adding PGDG APT repo" bash -c "
-        echo \"deb [signed-by=/usr/share/keyrings/postgresql-keyring.gpg] \\
+        echo \"deb [signed-by=${pgdg_key}] \\
           https://apt.postgresql.org/pub/repos/apt \\
           \$(lsb_release -cs)-pgdg main\" \\
           | tee /etc/apt/sources.list.d/pgdg.list
@@ -1075,11 +1131,11 @@ main() {
   detect_os          # Section  1
   system_update      # Section  2  (FATAL on failure)
   install_base       # Section  3
-  install_docker     # Section  4
-  install_kubectl    # Section  5
-  install_helm       # Section  6
-  install_azure_cli  # Section  7
-  install_vault      # Section  8
+  install_vault      # Section  4
+  install_docker     # Section  5
+  install_kubectl    # Section  6
+  install_helm       # Section  7
+  install_azure_cli  # Section  8
   install_node       # Section  9
   install_npm_globals # Section 10
   install_python     # Section 11
