@@ -109,6 +109,6 @@ database:
 redis:
   type: external
   external:
-    addr: unraid.internal:6379
+    addr: dragonfly.databases.svc.cluster.local:6379
     username: default
     password: <path:kubernetes/data/docker-secrets#dragonflydb-credentials>
