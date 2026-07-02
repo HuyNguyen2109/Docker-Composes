@@ -1566,3 +1566,12 @@ Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 **No placeholders:** None found.
 
 **Type consistency:** All function names consistent throughout (`install_docker`, `install_kubectl`, etc.); all `INSTALL_STATUS`/`INSTALL_VERSION` keys match between setter functions and `print_summary` `tools` array.
+
+## Post-Implementation Additions
+
+The following were implemented after this plan was executed:
+
+| Date | Change | Docs |
+|---|---|---|
+| 2026-06-04 | Added AWS CLI v2, Velero, jq, yq, shellcheck, bind9-dnsutils, netcat-openbsd, libssl-dev, libffi-dev, locales, dialog. Sections renumbered (16→18). | `docs/superpowers/specs/2026-06-04-vm-setup-script-additions-design.md` |
+| 2026-07-02 | Added interactive TUI mode selection menu (full or selective installation). New functions: `show_mode_menu()`, `run_full_install()`, `run_selective_install()`. | `docs/superpowers/specs/2026-07-02-vm-setup-script-menu-design.md` |

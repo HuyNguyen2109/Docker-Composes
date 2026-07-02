@@ -5,6 +5,7 @@
 *.tfstate
 *.tfstate.*
 *.img
+.playwright-mcp
 
 # Crash logs
 crash.log
