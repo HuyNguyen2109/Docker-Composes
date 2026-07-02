@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# vm-setup.sh — VM/VPS Automated Setup Script v1.0
+# vm-setup.sh — VM/VPS Automated Setup Script v1.2
 # =============================================================================
 #
 # REQUIRED ENVIRONMENT VARIABLES
@@ -37,7 +37,7 @@ fi
 SCRIPT_VERSION="1.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_FILE="${SCRIPT_DIR}/setup-$(date +%Y%m%d-%H%M%S).log"
-TOTAL_SECTIONS=16
+TOTAL_SECTIONS=18
 TOTAL_ERRORS=0
 declare -A INSTALL_STATUS
 declare -A INSTALL_VERSION
@@ -56,6 +56,9 @@ DISTRO_CODENAME=""
 
 # Spinner PID (0 = not running)
 SPINNER_PID=0
+
+# Summary filter (set by run_selective_install to limit which tools are shown)
+declare -a SUMMARY_FILTER=()
 
 # Temporary files created by run_cmd (cleaned up by cleanup trap)
 declare -a TMP_FILES=()
@@ -373,23 +376,24 @@ install_base() {
   case "${OS_TYPE}" in
     debian)
       run_cmd "Installing build-essential" \
-        apt-get install -y build-essential ca-certificates gnupg lsb-release curl wget || true
+        apt-get install -y build-essential ca-certificates gnupg lsb-release curl wget \
+          libssl-dev libffi-dev locales dialog || true
       ;;
     rhel)
       run_cmd "Installing Development Tools group" \
         bash -c "${PKG_MGR} groupinstall -y 'Development Tools'" || true
       run_cmd "Installing gcc make curl wget" \
-        bash -c "${PKG_INSTALL} gcc make ca-certificates gnupg curl wget" || true
+        bash -c "${PKG_INSTALL} gcc make ca-certificates gnupg curl wget openssl-devel libffi-devel glibc-locale-source" || true
       ;;
     arch)
       run_cmd "Installing base-devel" \
-        pacman -S --noconfirm --needed base-devel curl wget gnupg || true
+        pacman -S --noconfirm --needed base-devel curl wget gnupg openssl libffi || true
       ;;
     suse)
       run_cmd "Installing devel_basis pattern" \
         zypper install -y -t pattern devel_basis || true
       run_cmd "Installing gcc make curl wget" \
-        bash -c "${PKG_INSTALL} gcc make ca-certificates curl wget" || true
+        bash -c "${PKG_INSTALL} gcc make ca-certificates curl wget libopenssl-devel libffi-devel glibc-locale" || true
       ;;
   esac
 
@@ -398,11 +402,11 @@ install_base() {
 }
 
 # =============================================================================
-# SECTION 4 — HASHICORP VAULT  (official HashiCorp repositories)
+# SECTION 8 — HASHICORP VAULT  (official HashiCorp repositories)
 # =============================================================================
 
 install_vault() {
-  tui_header "HashiCorp Vault (Official Repo)" 4
+  tui_header "HashiCorp Vault (Official Repo)" 8
 
   if command -v vault &>/dev/null; then
     local current_ver
@@ -470,11 +474,11 @@ install_vault() {
 }
 
 # =============================================================================
-# SECTION 5 — DOCKER  (official Docker documentation)
+# SECTION 4 — DOCKER  (official Docker documentation)
 # =============================================================================
 
 install_docker() {
-  tui_header "Docker Engine (Official)" 5
+  tui_header "Docker Engine (Official)" 4
 
   if command -v docker &>/dev/null; then
     local current_ver
@@ -548,11 +552,11 @@ install_docker() {
 }
 
 # =============================================================================
-# SECTION 6 — KUBECTL  (official Kubernetes repositories)
+# SECTION 5 — KUBECTL  (official Kubernetes repositories)
 # =============================================================================
 
 install_kubectl() {
-  tui_header "kubectl (Official Kubernetes)" 6
+  tui_header "kubectl (Official Kubernetes)" 5
 
   if command -v kubectl &>/dev/null; then
     local current_ver
@@ -614,11 +618,11 @@ REPO
 }
 
 # =============================================================================
-# SECTION 7 — HELM  (official get-helm-3 script)
+# SECTION 6 — HELM  (official get-helm-3 script)
 # =============================================================================
 
 install_helm() {
-  tui_header "Helm (Official Script)" 7
+  tui_header "Helm (Official Script)" 6
 
   if command -v helm &>/dev/null; then
     local current_ver
@@ -645,11 +649,11 @@ install_helm() {
 }
 
 # =============================================================================
-# SECTION 8 — AZURE CLI + VAULT SECRETS
+# SECTION 7 — AZURE CLI + VAULT SECRETS
 # =============================================================================
 
 install_azure_cli() {
-  tui_header "Azure CLI + Vault Secrets" 8
+  tui_header "Azure CLI + Vault Secrets" 7
 
   if command -v az &>/dev/null; then
     local current_ver
@@ -717,6 +721,7 @@ REPO
   echo -e "  ${GRAY}Fetching Azure secrets from Vault...${RESET}"
 
   local bashrc="${HOME}/.bashrc"
+  # shellcheck source=/dev/null
   [[ -f "$bashrc" ]] && set +u && source "$bashrc" && set -u
 
   local vault_ok=true
@@ -957,24 +962,28 @@ install_common_tools() {
   tui_header "Common Tools" 14
 
   local tools_debian=(
-    git vim nano nmap unzip
+    git vim nano nmap unzip jq shellcheck
     nfs-common nfs-kernel-server net-tools
     openssh-server autofs sshpass bash-completion
+    bind9-dnsutils netcat-openbsd
   )
   local tools_rhel=(
-    git vim nano nmap unzip
+    git vim nano nmap unzip jq
     nfs-utils net-tools
     openssh-server autofs sshpass bash-completion
+    bind-utils nmap-ncat
   )
   local tools_arch=(
-    git vim nano nmap unzip
+    git vim nano nmap unzip jq shellcheck
     nfs-utils net-tools
     openssh autofs sshpass bash-completion
+    bind-utils openbsd-netcat
   )
   local tools_suse=(
-    git vim nano nmap unzip
+    git vim nano nmap unzip jq
     nfs-client nfs-kernel-server net-tools
     openssh autofs sshpass bash-completion
+    bind-utils netcat-openbsd
   )
 
   local pkg
@@ -985,9 +994,12 @@ install_common_tools() {
       done
       ;;
     rhel)
+      # SC linter on RHEL requires EPEL
+      run_cmd "Installing epel-release" bash -c "${PKG_INSTALL} epel-release" || true
       for pkg in "${tools_rhel[@]}"; do
         run_cmd "Installing ${pkg}" bash -c "${PKG_INSTALL} ${pkg}" || true
       done
+      run_cmd "Installing shellcheck" bash -c "${PKG_INSTALL} shellcheck" || true
       ;;
     arch)
       for pkg in "${tools_arch[@]}"; do
@@ -998,19 +1010,109 @@ install_common_tools() {
       for pkg in "${tools_suse[@]}"; do
         run_cmd "Installing ${pkg}" bash -c "${PKG_INSTALL} ${pkg}" || true
       done
+      run_cmd "Installing ShellCheck" bash -c "${PKG_INSTALL} ShellCheck" || true
       ;;
   esac
+
+  # yq — standalone binary from GitHub releases (no distro package)
+  if ! command -v yq &>/dev/null; then
+    local yq_arch="amd64"
+    case "$(uname -m)" in
+      aarch64|arm64) yq_arch="arm64" ;;
+    esac
+    run_cmd "Installing yq (GitHub binary)" bash -c "
+      YQ_URL=\$(curl -fsSL https://api.github.com/repos/mikefarah/yq/releases/latest \
+        | grep -o 'https://[^\"]*yq_linux_${yq_arch}[^\"]*' | head -1)
+      curl -fsSL \"\${YQ_URL}\" -o /usr/local/bin/yq
+      chmod +x /usr/local/bin/yq
+    " || true
+  fi
 
   INSTALL_STATUS["common-tools"]="installed"
   INSTALL_VERSION["common-tools"]=$(git --version 2>/dev/null | awk '{print $3}' || echo "n/a")
 }
 
 # =============================================================================
-# SECTION 15 — USER & GROUP SETUP
+# SECTION 15 — AWS CLI v2
+# =============================================================================
+
+install_aws_cli() {
+  tui_header "AWS CLI v2 (Official Installer)" 15
+
+  if command -v aws &>/dev/null; then
+    local current_ver
+    current_ver=$(aws --version 2>/dev/null | awk '{print $1}' | cut -d'/' -f2 || echo "unknown")
+    echo -e "  ${YELLOW}${WARN}${RESET}  AWS CLI already installed (${current_ver}). Skipping."
+    INSTALL_STATUS["aws-cli"]="already-installed"
+    INSTALL_VERSION["aws-cli"]="${current_ver}"
+    return 0
+  fi
+
+  run_cmd "Installing AWS CLI v2" bash -c "
+    ARCH_NAME=\"x86_64\"
+    case \"\$(uname -m)\" in
+      aarch64|arm64) ARCH_NAME=\"aarch64\" ;;
+    esac
+    ZIP=\"awscli-exe-linux-\${ARCH_NAME}.zip\"
+    curl -fsSL \"https://awscli.amazonaws.com/\${ZIP}\" -o \"/tmp/\${ZIP}\"
+    curl -fsSL \"https://awscli.amazonaws.com/\${ZIP}.sha256\" -o \"/tmp/\${ZIP}.sha256\"
+    (cd /tmp && sha256sum --check \"\${ZIP}.sha256\") || true
+    unzip -qo \"/tmp/\${ZIP}\" -d /tmp/awscli-install
+    /tmp/awscli-install/aws/install
+    rm -rf \"/tmp/\${ZIP}\" \"/tmp/\${ZIP}.sha256\" /tmp/awscli-install
+  " || true
+
+  local installed_ver
+  installed_ver=$(aws --version 2>/dev/null | awk '{print $1}' | cut -d'/' -f2 || echo "unknown")
+  INSTALL_STATUS["aws-cli"]="installed"
+  INSTALL_VERSION["aws-cli"]="${installed_ver}"
+}
+
+# =============================================================================
+# SECTION 16 — VELERO  (GitHub Releases)
+# =============================================================================
+
+install_velero() {
+  tui_header "Velero (GitHub Release)" 16
+
+  if command -v velero &>/dev/null; then
+    local current_ver
+    current_ver=$(velero version --client-only 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
+    echo -e "  ${YELLOW}${WARN}${RESET}  Velero already installed (${current_ver}). Skipping."
+    INSTALL_STATUS["velero"]="already-installed"
+    INSTALL_VERSION["velero"]="${current_ver}"
+    return 0
+  fi
+
+  run_cmd "Installing Velero" bash -c "
+    VELERO_VER=\$(curl -fsSL https://api.github.com/repos/vmware-tanzu/velero/releases/latest \
+      | grep -o '\"tag_name\":\"[^\"]*\"' | cut -d'\"' -f4)
+    ARCH_NAME=\"amd64\"
+    case \"\$(uname -m)\" in
+      aarch64|arm64) ARCH_NAME=\"arm64\" ;;
+    esac
+    TARBALL=\"velero-\${VELERO_VER}-linux-\${ARCH_NAME}.tar.gz\"
+    curl -fsSL \"https://github.com/vmware-tanzu/velero/releases/download/\${VELERO_VER}/\${TARBALL}\" \
+      -o \"/tmp/\${TARBALL}\"
+    cd /tmp
+    tar xzf \"\${TARBALL}\"
+    cp \"velero-\${VELERO_VER}-linux-\${ARCH_NAME}/velero\" /usr/local/bin/velero
+    chmod +x /usr/local/bin/velero
+    rm -rf \"/tmp/\${TARBALL}\" \"/tmp/velero-\${VELERO_VER}-linux-\${ARCH_NAME}\"
+  " || true
+
+  local installed_ver
+  installed_ver=$(velero version --client-only 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
+  INSTALL_STATUS["velero"]="installed"
+  INSTALL_VERSION["velero"]="${installed_ver}"
+}
+
+# =============================================================================
+# SECTION 17 — USER & GROUP SETUP
 # =============================================================================
 
 setup_users() {
-  tui_header "User & Group Setup" 15
+  tui_header "User & Group Setup" 17
 
   local target_user="${SUDO_USER:-}"
   if [[ -z "${target_user}" ]]; then
@@ -1038,11 +1140,11 @@ setup_users() {
 }
 
 # =============================================================================
-# SECTION 16 — SUMMARY REPORT + REBOOT PROMPT
+# SECTION 18 — SUMMARY REPORT + REBOOT PROMPT
 # =============================================================================
 
 print_summary() {
-  tui_header "Setup Complete — Summary" 16
+  tui_header "Setup Complete — Summary" "${TOTAL_SECTIONS}"
 
   local elapsed_min=$(( SECONDS / 60 ))
   local elapsed_sec=$(( SECONDS % 60 ))
@@ -1061,12 +1163,18 @@ print_summary() {
     "TOOL" "STATUS" "VERSION"
   echo -e "${CYAN}╠${box}╣${RESET}"
 
-  local tools=(
-    "docker" "kubectl" "helm" "azure-cli" "vault"
-    "nodejs" "npm-globals" "python3"
-    "postgresql-client" "redis-tools" "common-tools"
-    "base-packages" "user-setup"
-  )
+  local tools=()
+  if [[ ${#SUMMARY_FILTER[@]} -gt 0 ]]; then
+    tools=("${SUMMARY_FILTER[@]}")
+  else
+    tools=(
+      "docker" "kubectl" "helm" "azure-cli" "vault"
+      "nodejs" "npm-globals" "python3"
+      "postgresql-client" "redis-tools" "common-tools"
+      "aws-cli" "velero"
+      "base-packages" "user-setup"
+    )
+  fi
 
   local tool status_val version_val status_display color
   for tool in "${tools[@]}"; do
@@ -1129,22 +1237,206 @@ main() {
   tui_banner
 
   detect_os          # Section  1
-  system_update      # Section  2  (FATAL on failure)
-  install_base       # Section  3
-  install_vault      # Section  4
-  install_docker     # Section  5
-  install_kubectl    # Section  6
-  install_helm       # Section  7
-  install_azure_cli  # Section  8
-  install_node       # Section  9
-  install_npm_globals # Section 10
-  install_python     # Section 11
-  install_pg_client  # Section 12
-  install_redis_tools # Section 13
-  install_common_tools # Section 14
-  setup_users        # Section 15
+  show_mode_menu     # Interactive mode selection
+}
 
-  print_summary      # Section 16
+# =============================================================================
+# MODE SELECTION & ORCHESTRATION
+# =============================================================================
+
+# Show the top-level mode selection menu
+show_mode_menu() {
+  local choice
+  while true; do
+    echo ""
+    echo -e "  ${CYAN}╔══════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "  ${CYAN}║${RESET}              Installation Mode Selection               ${CYAN}║${RESET}"
+    echo -e "  ${CYAN}╚══════════════════════════════════════════════════════════╝${RESET}"
+    echo ""
+    echo -e "  ${BOLD}1${RESET}) Full Installation (all 18 sections)"
+    echo -e "  ${BOLD}2${RESET}) Selective Installation (choose individual sections)"
+    echo ""
+    echo -e "  ${BOLD}0${RESET}) Exit"
+    echo ""
+    read -rp "  Enter your choice [0-2]: " choice
+    case "${choice}" in
+      1)
+        echo ""
+        run_full_install
+        break
+        ;;
+      2)
+        echo ""
+        run_selective_install
+        break
+        ;;
+      0)
+        echo -e "\n  ${GREEN}Goodbye!${RESET}\n"
+        exit 0
+        ;;
+      *)
+        echo -e "  ${YELLOW}${WARN}${RESET}  Invalid choice. Please enter 0, 1, or 2."
+        ;;
+    esac
+  done
+}
+
+# Run all sections sequentially (original full flow)
+run_full_install() {
+  system_update
+  install_base
+  install_docker
+  install_kubectl
+  install_helm
+  install_azure_cli
+  install_vault
+  install_node
+  install_npm_globals
+  install_python
+  install_pg_client
+  install_redis_tools
+  install_common_tools
+  install_aws_cli
+  install_velero
+  setup_users
+
+  print_summary
+  reboot_prompt
+}
+
+# Show the multi-select checklist and run only selected sections
+run_selective_install() {
+  local -a selected=()
+  local -A seltoggles
+  local i choice
+
+  for i in {1..16}; do
+    seltoggles[$i]="n"
+  done
+
+  local labels=(
+    ""
+    "System Update & Upgrade"
+    "Base System Packages"
+    "Docker Engine"
+    "kubectl"
+    "Helm"
+    "Azure CLI + Vault Secrets"
+    "HashiCorp Vault"
+    "Node.js LTS"
+    "npm Global Packages"
+    "Python 3"
+    "PostgreSQL Client"
+    "Redis Tools"
+    "Common Tools"
+    "AWS CLI v2"
+    "Velero"
+    "User & Group Setup"
+  )
+
+  while true; do
+    echo ""
+    echo -e "  ${CYAN}╔══════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "  ${CYAN}║${RESET}              Select Sections to Install               ${CYAN}║${RESET}"
+    echo -e "  ${CYAN}╚══════════════════════════════════════════════════════════╝${RESET}"
+    echo ""
+
+    for i in {1..16}; do
+      if [[ "${seltoggles[$i]}" == "y" ]]; then
+        echo -e "  ${GREEN}[y]${RESET} ${i}) ${labels[$i]}"
+      else
+        echo -e "  ${GRAY}[n]${RESET} ${i}) ${labels[$i]}"
+      fi
+    done
+
+    echo ""
+    read -rp "  Enter choice(s) (e.g. 1, 3-6, 16) or 'a' for all, 'd' when done: " choice
+
+    case "${choice,,}" in
+      d)
+        break
+        ;;
+      a)
+        selected=()
+        for i in {1..16}; do
+          seltoggles[$i]="y"
+          selected+=("$i")
+        done
+        ;;
+      *)
+        local -a parsed=()
+        local token start end k
+        IFS=',' read -ra tokens <<< "${choice// /}"
+        for token in "${tokens[@]}"; do
+          token="${token// /}"
+          if [[ "$token" =~ ^([0-9]+)-([0-9]+)$ ]]; then
+            start=${BASH_REMATCH[1]}
+            end=${BASH_REMATCH[2]}
+            if [[ "$start" -ge 1 && "$start" -le "$end" && "$end" -le 16 ]]; then
+              for ((k = start; k <= end; k++)); do parsed+=("$k"); done
+            else
+              echo -e "  ${YELLOW}${WARN}${RESET}  Invalid range: ${token}"
+            fi
+          elif [[ "$token" =~ ^[0-9]+$ ]] && [[ "$token" -ge 1 && "$token" -le 16 ]]; then
+            parsed+=("$token")
+          elif [[ -n "$token" ]]; then
+            echo -e "  ${YELLOW}${WARN}${RESET}  Invalid input: ${token}"
+          fi
+        done
+
+        for i in "${parsed[@]}"; do
+          if [[ "${seltoggles[$i]}" == "y" ]]; then
+            seltoggles[$i]="n"
+            local -a tmp=()
+            local j
+            for j in "${selected[@]+"${selected[@]}"}"; do
+              [[ "$j" -ne "$i" ]] && tmp+=("$j")
+            done
+            selected=("${tmp[@]}")
+          else
+            seltoggles[$i]="y"
+            selected+=("$i")
+          fi
+        done
+        ;;
+    esac
+  done
+
+  if [[ ${#selected[@]} -eq 0 ]]; then
+    echo -e "\n  ${YELLOW}${WARN}${RESET}  No sections selected. Nothing to install."
+    echo -e "  ${GRAY}Run the script again to make a selection.${RESET}"
+    exit 0
+  fi
+
+  echo ""
+  echo -e "  ${GREEN}Running ${#selected[@]} selected section(s)...${RESET}"
+  echo ""
+
+  # Run only selected sections, building the summary filter
+  SUMMARY_FILTER=()
+  for i in "${selected[@]}"; do
+    case "$i" in
+       1) system_update;         SUMMARY_FILTER+=("system-update")      ;;
+       2) install_base;          SUMMARY_FILTER+=("base-packages")      ;;
+       3) install_docker;        SUMMARY_FILTER+=("docker")             ;;
+       4) install_kubectl;       SUMMARY_FILTER+=("kubectl")            ;;
+       5) install_helm;          SUMMARY_FILTER+=("helm")               ;;
+       6) install_azure_cli;     SUMMARY_FILTER+=("azure-cli")          ;;
+       7) install_vault;         SUMMARY_FILTER+=("vault")              ;;
+       8) install_node;          SUMMARY_FILTER+=("nodejs")             ;;
+       9) install_npm_globals;   SUMMARY_FILTER+=("npm-globals")        ;;
+      10) install_python;        SUMMARY_FILTER+=("python3")            ;;
+      11) install_pg_client;     SUMMARY_FILTER+=("postgresql-client")  ;;
+      12) install_redis_tools;   SUMMARY_FILTER+=("redis-tools")        ;;
+      13) install_common_tools;  SUMMARY_FILTER+=("common-tools")       ;;
+      14) install_aws_cli;       SUMMARY_FILTER+=("aws-cli")            ;;
+      15) install_velero;        SUMMARY_FILTER+=("velero")             ;;
+      16) setup_users;           SUMMARY_FILTER+=("user-setup")         ;;
+    esac
+  done
+
+  TOTAL_SECTIONS=${#selected[@]}
+  print_summary
   reboot_prompt
 }
 
