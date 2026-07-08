@@ -160,9 +160,7 @@ Bi-weekly UPS deep battery exercise simulation via **NUT (Network UPS Tools)**.
 | talos-02        | Bare-metal (CP)    | ubuntu  | SSH key @ `$HOME/ssh-keys/homelab-linux` | Kubernetes node                 |
 | tower.local     | unRAID server      | root    | SSH key @ `$HOME/ssh-keys/homelab-linux` | Storage/NAS                     |
 | talos-cloud-00  | Cloud VM           | root    | SSH key @ `$HOME/ssh-keys/oracle`        | Cloud node                      |
-
-> **Note:** Actual IP addresses have been redacted; they are stored only in
-> `.github/copilot-instructions.md`.
+| vault-agent     | VM                 | root    | SSH key @ `$HOME/ssh-keys/homelab-linux` | LXC Container                   |
 
 ---
 
@@ -177,12 +175,7 @@ Filenames are date-prefixed: `YYYY-MM-DD-<topic>.md`.
 ---
 
 ## Agent Conventions
-
-1. **RTK awareness**: The project uses `rtk` (Rust Token Killer) to prefix commands
-   for reduced context usage. See `.github/copilot-instructions.md` for the full
-   RTK reference. When running shell commands in this repo, prefer `rtk`-prefixed
-   commands where applicable.
-2. **Shellcheck**: The `vm-setup.sh` script must stay shellcheck-clean.
-3. **Develop branch**: All commits intended for cluster deployment must target `develop`.
-4. **Vault placeholders**: Helm values may contain `<path:kubernetes/...#property>`
+1. **Shellcheck**: The `vm-setup.sh` script must stay shellcheck-clean.
+2. **Develop branch**: All commits intended for cluster deployment must target `develop`.
+3. **Vault placeholders**: Helm values may contain `<path:kubernetes/...#property>`
    syntax resolved by the `avp-helm` ArgoCD plugin.

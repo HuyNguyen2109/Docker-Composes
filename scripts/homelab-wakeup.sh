@@ -12,6 +12,12 @@
 #   proxmox-00  builtin eno1 (igb):  14:02:ec:49:37:30  (permanent MAC, no bond override)
 #   proxmox-00  USB r8152:           c8:4d:44:23:3e:49
 #
+#   talos-00    e1000e (QEMU VM 100):  bc:24:11:1e:39:9b  ← WOL target
+#               QEMU/KVM VM on proxmox-00. QEMU's e1000e doesn't implement
+#               hardware WOL; a wol-vm-listener daemon on proxmox-00 catches the
+#               magic packet on vmbr0 and runs `qm start 100`. Both HOSTS fields
+#               use the same MAC (single-NIC VM).
+#
 #   talos-01    bond MAC:            8a:c0:fc:36:31:75  ← WOL target
 #               bond mode active-backup, fail_over_mac=none — bond driver writes the
 #               bond MAC onto both slave NICs, so WOL circuit responds to bond MAC only.
@@ -27,9 +33,11 @@
 #   etherwake — present in unRAID base image at /usr/sbin/etherwake
 #
 # Prerequisites on each TARGET host (one-time setup):
-#   BIOS/UEFI → Power Management → Wake on LAN: ENABLED
-#   (Without this, WOL packets are silently ignored at hardware level)
-#   No OS-level WOL persistence is needed — WOL flag is retained by the BIOS/NIC.
+#   - Physical hosts: BIOS/UEFI → Power Management → Wake on LAN: ENABLED
+#   - Virtual hosts (talos-00): wol-vm-listener daemon must be running on
+#     the Proxmox hypervisor to catch magic packets and start the VM.
+#   - No OS-level WOL persistence is needed for physical hosts — WOL flag
+#     is retained by the BIOS/NIC.
 # =============================================================================
 
 set -uo pipefail
@@ -40,6 +48,7 @@ set -uo pipefail
 # Format: "name builtin_mac usb_mac"
 HOSTS=(
   "proxmox-00  14:02:ec:49:37:30  c8:4d:44:23:3e:49"
+  "talos-00    bc:24:11:1e:39:9b  bc:24:11:1e:39:9b"
   "talos-01    8a:c0:fc:36:31:75  8a:c0:fc:36:31:75"
   "talos-02    6c:4b:90:5e:c3:9e  c8:4d:44:23:3e:4a"
 )
@@ -104,6 +113,7 @@ ensure_etherwake
 update_hosts() {
   local entries=(
     "192.168.1.10 proxmox-00"
+    "192.168.1.11 talos-00"
     "192.168.1.12 talos-01"
     "192.168.1.13 talos-02"
   )
