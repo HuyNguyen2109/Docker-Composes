@@ -1,4 +1,7 @@
 ### Official Link: https://artifacthub.io/packages/helm/longhorn/longhorn
+global:
+  nodeSelector:
+    node-role.kubernetes.io/storage: 'true'
 
 service:
   ui:
