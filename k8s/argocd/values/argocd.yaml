@@ -42,6 +42,7 @@ server:
     enabled: true
     controller: generic
     ingressClassName: traefik
+    https: true
     tls: true
     annotations:
       traefik.ingress.kubernetes.io/router.entrypoints: websecure
@@ -60,6 +61,7 @@ controller:
         - ALL
 
 dex:
+  enabled: false
   livelinessProbe:
     enabled: true
   readinessProbe:
@@ -185,25 +187,25 @@ configs:
   cm:
     exec.enabled: true
     statusbadge.enabled: true
-    dex.config: |
-      connectors:
-      - config:
-          issuer: "https://idp.mcb-homelab.com/application/o/argo-cd/"
-          clientID: "yGtApPgW9pUWxQdOW39MrSngyPNweb6KfcqEv713"
-          clientSecret: "$dex.authentik.clientSecret"
-          insecureEnableGroups: true
-          scopes:
-          - openid
-          - profile
-          - email
-        name: authentik
-        type: oidc
-        id: authentik
+    accounts.cli: apiKey, login
+    oidc.config: |
+      name: SSO
+      issuer: https://idp.mcb-homelab.com
+      clientID: "381144061064511496"
+      clientSecret: $argocd-secret-eso:oidc.clientSecret
+      requestedScopes:
+        - openid
+        - profile
+        - email
+        - groups
+      logoutURL: https://idp.mcb-homelab.com/oidc/v1/end_session
+    server.insecure: true
   params:
     server.insecure: true
   rbac:
-    policy.default: role:readonly
+    policy.default: role:admin
     policy.csv: |
-      g, homelab, role:admin
+      g, homelab_admins, role:admin
+      g, cli, role:admin
     scopes: '[groups]'
 

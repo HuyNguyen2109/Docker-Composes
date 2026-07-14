@@ -179,3 +179,21 @@ Filenames are date-prefixed: `YYYY-MM-DD-<topic>.md`.
 2. **Develop branch**: All commits intended for cluster deployment must target `develop`.
 3. **Vault placeholders**: Helm values may contain `<path:kubernetes/...#property>`
    syntax resolved by the `avp-helm` ArgoCD plugin.
+4. **ArgoCD API access**: Use the `$ARGOCD_TOKEN` env var (exported in `~/.bashrc`) for
+   authenticated API calls. Example:
+   ```
+   curl -sk -H "Authorization: Bearer $ARGOCD_TOKEN" \
+     "https://argocd.ingress.internal/api/v1/applications"
+   ```
+   The token belongs to the `cli` local account (defined in `k8s/argocd/values/argocd.yaml`
+   via `configs.cm.accounts.cli: apiKey, login`). To regenerate, log into ArgoCD as admin,
+   go to Settings → Accounts → cli → New Token.
+
+### ArgoCD Application `valuesObject` Overrides
+
+Some applications use the ArgoCD UI/API to set `valuesObject` overrides on top of the
+Helm values files. These are NOT persisted in git. Notable example:
+
+- **loki** (`monitoring`): Overrides `gateway.ingress` (enabled, hosts, annotations, TLS)
+  on top of `k8s/kube-prometheus-stack/values/loki.yaml`. If you need to change Loki
+  ingress settings, update via ArgoCD API/UI, not just the values file.
