@@ -2,6 +2,8 @@
 ## Homelab cluster SSH connection settings
 ansible_user: ubuntu
 ansible_ssh_private_key_file: ~/ssh-keys/homelab-linux
+ansible_become: yes
+ansible_become_user: root
 
 ## Directory where the binaries will be installed
 bin_dir: /usr/local/bin
