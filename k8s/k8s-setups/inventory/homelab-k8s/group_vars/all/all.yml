@@ -16,16 +16,10 @@ bin_dir: /usr/local/bin
 # access_ip: 1.1.1.1
 
 
-## External LB example config
-## apiserver_loadbalancer_domain_name: "elb.some.domain"
-# loadbalancer_apiserver:
-#   address: 1.2.3.4
-#   port: 1234
-
-## Internal loadbalancers for apiservers
-# loadbalancer_apiserver_localhost: true
-# valid options are "nginx" or "haproxy"
-# loadbalancer_apiserver_type: nginx  # valid values "nginx" or "haproxy"
+## API server endpoint — points to talos-alpha (sole control-plane)
+loadbalancer_apiserver:
+  address: 192.168.1.10
+  port: 6443
 
 ## Local loadbalancer should use this port
 ## And must be set port 6443
