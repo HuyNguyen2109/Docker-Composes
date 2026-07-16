@@ -78,8 +78,8 @@ service:
   #     -p='[{"op":"replace","path":"/spec/ports/1/nodePort","value":30001}]'
   # Resulting ports: 80:<auto>/TCP, 443:30001/TCP
 
-# extraNodeSelectorTerms:
-#   - key: "node.cert-manager"
-#     operator: In
-#     values:
-#       - "true"
+extraNodeSelectorTerms:
+  - key: "node-role.kubernetes.io/worker"
+    operator: In
+    values:
+      - ""

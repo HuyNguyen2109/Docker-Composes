@@ -10,7 +10,8 @@ global:
   domain: argocd.ingress.internal
   networkPolicy:
     create: true
-  nodeSelector: {}
+  nodeSelector:
+    node-role.kubernetes.io/worker: ''
   # Pod-level security context applied to all components
   securityContext:
     runAsNonRoot: true
