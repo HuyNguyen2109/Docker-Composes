@@ -1714,7 +1714,8 @@ write:
   # -- Pod Disruption Budget maxUnavailable
   maxUnavailable: 1
   # -- Node selector for write pods
-  nodeSelector: {}
+  nodeSelector:
+    node-role.kubernetes.io/worker: ''
   # -- Topology Spread Constraints for write pods
   # The value will be passed through tpl.
   topologySpreadConstraints: []
