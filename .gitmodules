@@ -1,3 +1,6 @@
 [submodule "k8s/k8s-setups/kubespray"]
 	path = k8s/k8s-setups/kubespray
 	url = https://github.com/kubernetes-sigs/kubespray.git
+[submodule "k8s/synology-csi"]
+	path = k8s/synology-csi
+	url = https://github.com/SynologyOpenSource/synology-csi.git
