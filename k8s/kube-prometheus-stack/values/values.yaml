@@ -1322,6 +1322,8 @@ alertmanager:
 grafana:
   enabled: true
   namespaceOverride: ""
+  nodeSelector:
+    node-role.kubernetes.io/storage: "true"
 
   ## ForceDeployDatasources Create datasource configmap even if grafana deployment has been disabled
   ##
