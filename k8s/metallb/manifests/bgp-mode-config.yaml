@@ -19,8 +19,6 @@ spec:
   peerASN: 64512
   myASN: 64513
   ebgpMultiHop: true
-  holdTime: 90s
-  keepaliveTime: 30s
 ---
 apiVersion: metallb.io/v1beta1
 kind: BGPAdvertisement
