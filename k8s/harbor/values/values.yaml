@@ -78,7 +78,8 @@ jobservice:
     requests:
       memory: 256Mi
       cpu: 100m
-  nodeSelector: {}
+  nodeSelector:
+    node-role.kubernetes.io/storage: "true"
 
 registry:
   resources:
@@ -95,7 +96,8 @@ trivy:
     limits:
       cpu: 1
       memory: 1Gi
-  nodeSelector: {}
+  nodeSelector:
+    node-role.kubernetes.io/storage: "true"
 
 database:
   type: external
