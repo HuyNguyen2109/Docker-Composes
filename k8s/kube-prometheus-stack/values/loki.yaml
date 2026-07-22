@@ -1715,7 +1715,7 @@ write:
   maxUnavailable: 1
   # -- Node selector for write pods
   nodeSelector:
-    node-role.kubernetes.io/worker: ''
+    node-role.kubernetes.io/storage: "true"
   # -- Topology Spread Constraints for write pods
   # The value will be passed through tpl.
   topologySpreadConstraints: []
@@ -1990,7 +1990,7 @@ backend:
   maxUnavailable: 1
   # -- Node selector for backend pods
   nodeSelector:
-    node-role.kubernetes.io/worker: ''
+    node-role.kubernetes.io/storage: "true"
   # -- Topology Spread Constraints for backend pods
   # The value will be passed through tpl.
   topologySpreadConstraints: []
