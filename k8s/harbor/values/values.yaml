@@ -80,6 +80,20 @@ jobservice:
       cpu: 100m
   nodeSelector:
     node-role.kubernetes.io/storage: "true"
+  # Fix Synology CSI fsGroup: chown volume before Harbor starts
+  initContainers:
+    - name: fix-permissions
+      image: busybox:latest
+      command:
+        - sh
+        - -c
+        - chown -R 10000:10000 /var/log/jobs
+      securityContext:
+        runAsUser: 0
+        runAsNonRoot: false
+      volumeMounts:
+        - name: job-logs
+          mountPath: /var/log/jobs
 
 registry:
   resources:
@@ -98,6 +112,20 @@ trivy:
       memory: 1Gi
   nodeSelector:
     node-role.kubernetes.io/storage: "true"
+  # Fix Synology CSI fsGroup: chown volume before Harbor starts
+  initContainers:
+    - name: fix-permissions
+      image: busybox:latest
+      command:
+        - sh
+        - -c
+        - chown -R 10000:10000 /home/scanner/.cache
+      securityContext:
+        runAsUser: 0
+        runAsNonRoot: false
+      volumeMounts:
+        - name: data
+          mountPath: /home/scanner/.cache
 
 database:
   type: external
