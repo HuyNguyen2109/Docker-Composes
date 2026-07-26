@@ -1678,7 +1678,17 @@ write:
   # down or when using chunks storage with WAL disabled.
   # https://github.com/grafana/loki/blob/main/docs/sources/operations/storage/wal.md#how-to-scale-updown
   # -- Init containers to add to the write pods
-  initContainers: []
+  initContainers:
+    - name: fix-permissions
+      image: busybox:1.37
+      command: ["chown", "-R", "10001:10001", "/var/loki"]
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        runAsNonRoot: false
+      volumeMounts:
+        - name: data
+          mountPath: /var/loki
   # -- Containers to add to the write pods
   extraContainers: []
   # -- Volume mounts to add to the write pods
@@ -1955,7 +1965,17 @@ backend:
   # -- Environment variables from secrets or configmaps to add to the backend pods
   extraEnvFrom: []
   # -- Init containers to add to the backend pods
-  initContainers: []
+  initContainers:
+    - name: fix-permissions
+      image: busybox:1.37
+      command: ["chown", "-R", "10001:10001", "/var/loki"]
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        runAsNonRoot: false
+      volumeMounts:
+        - name: data
+          mountPath: /var/loki
   # -- Containers to add to the backend pods
   extraContainers: []
   # -- Volume mounts to add to the backend pods
