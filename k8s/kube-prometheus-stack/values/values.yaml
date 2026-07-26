@@ -1469,12 +1469,8 @@ grafana:
   # #
   persistence:
     enabled: true
-    storageClassName: "longhorn"
-    accessModes:
-      - ReadWriteOnce
+    existingClaim: grafana-data-migrated
     size: 20Gi
-    finalizers:
-      - kubernetes.io/pvc-protection
 
   serviceAccount:
     create: true
