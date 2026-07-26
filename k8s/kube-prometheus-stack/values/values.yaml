@@ -1471,7 +1471,7 @@ grafana:
   # #
   persistence:
     enabled: true
-    storageClassName: "longhorn"
+    storageClassName: "synology-iscsi-storage"
     accessModes:
       - ReadWriteOnce
     size: 20Gi

@@ -1741,7 +1741,7 @@ write:
     # If set to "-", storageClassName: "", which disables dynamic provisioning.
     # If empty or set to null, no storageClassName spec is
     # set, choosing the default provisioner (gp2 on AWS, standard on GKE, AWS, and OpenStack).
-    storageClass: null
+    storageClass: synology-iscsi-storage
     # -- Volume attributes class name to be used.
     # If empty or set to null, no volumeAttributesClassName spec is set.
     # Requires Kubernetes 1.31
@@ -2016,7 +2016,7 @@ backend:
     # If set to "-", storageClassName: "", which disables dynamic provisioning.
     # If empty or set to null, no storageClassName spec is
     # set, choosing the default provisioner (gp2 on AWS, standard on GKE, AWS, and OpenStack).
-    storageClass: null
+    storageClass: synology-iscsi-storage
     # -- Volume attributes class name to be used.
     # If empty or set to null, no volumeAttributesClassName spec is set.
     # Requires Kubernetes 1.31

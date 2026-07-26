@@ -22,13 +22,13 @@ persistence:
   resourcePolicy: "keep"
   persistentVolumeClaim:
     registry:
-      storageClass: longhorn
+      storageClass: synology-iscsi-storage
       size: 10Gi
     jobservice:
-      storageClass: longhorn
+      storageClass: synology-iscsi-storage
       size: 1Gi
     trivy:
-      storageClass: longhorn
+      storageClass: synology-iscsi-storage
       size: 10Gi
   imageChartStorage:
     type: s3
