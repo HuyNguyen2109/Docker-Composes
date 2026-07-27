@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: administrator-apps
+spec:
+  destination:
+    namespace: monitoring
+    name: homelab-cluster
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      targetRevision: 87.16.1
+      chart: kube-prometheus-stack
+      helm:
+        valueFiles:
+          - $values/k8s/kube-prometheus-stack/values/values.yaml
+    - repoURL: git@github.com:HuyNguyen2109/My-DevOps.git
+      targetRevision: develop
+      ref: values
+  project: homelab
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      enabled: true
+    syncOptions:
+      - Replace=true
+      - ServerSideApply=true
