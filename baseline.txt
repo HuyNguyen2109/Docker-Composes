@@ -1,0 +1,27 @@
+benchmarkdb
+immichdb
+kanbn
+pocketid-db
+postgres
+vault-data
+zitadel
+---ROLES---
+authentik-db-admin|t|f
+databasus-2629d39f|t|f
+harbor-db-admin|t|f
+immich-db-admin|t|f
+immichdb-admin|t|t
+kanbn-admin|t|f
+pocketid-db-admin|t|f
+postgres|t|t
+replicator|t|f
+vault-admin|t|f
+zitadel-admin|t|f
+---SIZES---
+benchmarkdb|760 MB
+immichdb|262 MB
+kanbn|10 MB
+pocketid-db|9345 kB
+postgres|7878 kB
+vault-data|43 MB
+zitadel|24 MB
