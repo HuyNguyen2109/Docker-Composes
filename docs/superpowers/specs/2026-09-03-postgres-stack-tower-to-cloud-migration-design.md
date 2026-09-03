@@ -79,10 +79,12 @@ data consistency or the live connections from dependent applications.
 - `tower → talos-cloud-00` works over SSH (22) and via `10.99.0.1` / `100.88.0.70`.
   **Verified**: tower's Docker containers (tested from `postgres18` on `db-intranet`)
   can reach `10.99.0.1` — so Vault/Immich will reach the new PgBouncer over the tunnel.
-- **Decision**: tower clients connect to the new PgBouncer at `10.99.0.1:5432`
-  (WireGuard), with mTLS layered on top. **Port 5432 is NOT opened on the public
-  IP.** Rationale: 5432 is a top-scanned port; the tunnel already provides the
-  needed encrypted, private path, so public exposure adds risk with no benefit.
+- **Decision**: clients connect to the new PgBouncer at `10.99.0.1:5432`
+  (WireGuard), plaintext over the tunnel (no mTLS). PgBouncer binds only to the
+  `wg0` IP and is firewalled to the tunnel subnet, so **port 5432 is reachable
+  only via the tunnel** — not on the public `eth0` or the Netbird mesh. Rationale:
+  the tunnel already provides encrypted, peer-authenticated transport; mTLS was
+  dropped to simplify, with the listen surface hardened instead.
 
 ## Approach
 
@@ -116,17 +118,26 @@ passes.
   WAL queue) so its S3 backup jobs survive; re-point its managed instance to the new
   postgres and recreate the replication slot on the new primary.
 
-### 4. mTLS on new PgBouncer (self-signed CA)
+### 4. Network hardening (NO mTLS)
 
-- Generate a CA, a server cert for PgBouncer (SANs: `localhost`, `pgbouncer`,
-  `127.0.0.1`, `10.99.0.1`, `100.88.0.70`), and one client cert per app.
-- PgBouncer (`edoburu/pgbouncer`) TLS: `client_tls_sslmode = verify-full`,
-  `client_tls_ca_file`, `server_tls_cert_file`, `server_tls_key_file`.
-- Clients connect with `sslmode=verify-full` + `sslrootcert` + `sslcert` + `sslkey`.
+Per decision: **drop mTLS**, rely on the WireGuard tunnel for transport security and
+harden the listen surface instead. Passwords are left unchanged for now.
+
+- **Bind PgBouncer to the tunnel only**: docker port mapping `10.99.0.1:5432:5432`
+  (instead of `0.0.0.0:5432`). This makes 5432 reachable **only** on the `wg0`
+  interface — excluding the public `eth0` (`14.225.220.145`) and the Netbird `wt0`
+  mesh (`100.88.0.70`).
+- **Defense-in-depth**: add a `DOCKER-USER` iptables rule on talos-cloud-00
+  accepting tcp/5432 from `10.99.0.0/24` + `127.0.0.1` and dropping the rest
+  (Docker's own rules bypass `ufw`, so this is the reliable control point).
+- **Clients connect plaintext over the tunnel** (`sslmode=disable`), matching the
+  current config, but pointed at `10.99.0.1:5432`.
+- **Internal services** (postgres↔pgbouncer↔databasus↔pgadmin4) stay on the
+  `db-intranet` docker network — no host exposure at all.
 
 ### 5. Cutover & verification
 
-1. Repoint the 4 clients to the new PgBouncer (with their client certs).
+1. Repoint the 4 clients to the new PgBouncer at `10.99.0.1:5432`.
 2. Verify each app can connect (per-app health/read query) and PgBouncer
    `SHOW POOLS` / `SHOW STATS` shows active sessions.
 3. Keep old stack running as instant rollback until all green (user step 8).
@@ -144,6 +155,6 @@ passes.
 |---|---|
 | Data loss during clone | Physical basebackup is transactionally consistent; verify with row counts + `pg_dumpall` diff before cutover |
 | Broken app connections at cutover | Repoint one client at a time; keep old PgBouncer up for instant rollback |
-| mTLS config mismatch | Validate TLS handshake with `psql sslmode=verify-full` before switching app DSNs |
+| 5432 reachable beyond the tunnel (netbird mesh / public) | Bind pgbouncer to `10.99.0.1` only + `DOCKER-USER` drop rule for non-tunnel sources |
 | Databasus loses backup config | Copy full `databasus/` dir including embedded PG + `secret.key`; re-verify S3 job after move |
 | RAM pressure on target (5.8 GB) | Reduce `mem_limit` for pgadmin4/databasus on the new host if needed; monitor |
