@@ -8,6 +8,11 @@
 
 **Tech Stack:** Docker / Docker Compose, PostgreSQL 18 (`pgvector/pgvector:pg18-trixie`), PgBouncer (`edoburu/pgbouncer:v1.25.2-p0`), WireGuard overlay, Bash/SSH.
 
+> **Execution deviations (captured during run, 2026-09-03):**
+> 1. **Local-container hairpin**: containers on `talos-cloud-00` cannot reach the host's own `10.99.0.1` (SYN blackholed). Zitadel/Kanbn were therefore attached to the `db-intranet` network and point at `pgbouncer:5432`, while only the tower clients (Vault/Immich) use `10.99.0.1:5432`.
+> 2. **Replication slot SQL**: `pg_create_physical_replication_slot` requires the slot name in single quotes (string literal), not double quotes.
+> 3. **Basebackup size**: source was ~179 MB gzipped (not ~1.5 GB) — data is highly compressible; verified complete via `backup_label`, `backup_manifest`, and byte-identical restore.
+
 ## Global Constraints
 
 - **Source host** `tower.local` = `unraid.internal` = `192.168.1.40`; SSH from the controller: `ssh -i /root/ssh-keys/homelab-linux root@unraid.internal`.
