@@ -68,7 +68,7 @@ data consistency or the live connections from dependent applications.
   databasus' `traefik-intranet` attachment is dropped (host-port exposed, and
   talos-cloud-00 routes via its `proxy`/caddy network instead of traefik)
 
-### Overlay connectivity (already present)
+### Connectivity (FINAL decision: private overlay, no public exposure)
 
 | Interface | tower.local | talos-cloud-00 |
 |---|---|---|
@@ -77,8 +77,12 @@ data consistency or the live connections from dependent applications.
 
 - `talos-cloud-00 → 192.168.1.40:5432` works today (route `192.168.1.0/24 dev wg0`).
 - `tower → talos-cloud-00` works over SSH (22) and via `10.99.0.1` / `100.88.0.70`.
-- After cutover, tower clients reach the new PgBouncer at `10.99.0.1:5432`
-  (WireGuard) or `100.88.0.70:5432` (Netbird) — **no public port opened**.
+  **Verified**: tower's Docker containers (tested from `postgres18` on `db-intranet`)
+  can reach `10.99.0.1` — so Vault/Immich will reach the new PgBouncer over the tunnel.
+- **Decision**: tower clients connect to the new PgBouncer at `10.99.0.1:5432`
+  (WireGuard), with mTLS layered on top. **Port 5432 is NOT opened on the public
+  IP.** Rationale: 5432 is a top-scanned port; the tunnel already provides the
+  needed encrypted, private path, so public exposure adds risk with no benefit.
 
 ## Approach
 
