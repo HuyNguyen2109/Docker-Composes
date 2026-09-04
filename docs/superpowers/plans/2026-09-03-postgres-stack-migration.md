@@ -12,6 +12,7 @@
 > 1. **Local-container hairpin**: containers on `talos-cloud-00` cannot reach the host's own `10.99.0.1` (SYN blackholed). Zitadel/Kanbn were therefore attached to the `db-intranet` network and point at `pgbouncer:5432`, while only the tower clients (Vault/Immich) use `10.99.0.1:5432`.
 > 2. **Replication slot SQL**: `pg_create_physical_replication_slot` requires the slot name in single quotes (string literal), not double quotes.
 > 3. **Basebackup size**: source was ~179 MB gzipped (not ~1.5 GB) — data is highly compressible; verified complete via `backup_label`, `backup_manifest`, and byte-identical restore.
+> 4. **Post-cutover fix (immich)**: `immichdb-admin` was not in PgBouncer's `userlist.txt`, and PgBouncer's `auth_query` path fails for users absent from the file (SCRAM verifier can't be used to connect as `auth_user`). Added `immichdb-admin` to `userlist.txt` + `SIGHUP` reload — immich recovered. Any future app role routed through PgBouncer must be added to `userlist.txt`.
 
 ## Global Constraints
 
