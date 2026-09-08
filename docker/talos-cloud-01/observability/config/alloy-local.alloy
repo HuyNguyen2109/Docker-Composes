@@ -1,0 +1,57 @@
+logging {
+  level = "info"
+}
+
+discovery.docker "self" {
+  host = "unix:///var/run/docker.sock"
+}
+
+loki.source.docker "self" {
+  host     = "unix:///var/run/docker.sock"
+  targets  = discovery.docker.self.targets
+  forward_to = [loki.relabel.host.receiver]
+}
+
+loki.source.file "syslog" {
+  targets = [{
+    __path__ = "/var/log/syslog",
+  }]
+  forward_to = [loki.relabel.host.receiver]
+}
+
+loki.relabel "host" {
+  forward_to = [loki.write.central.receiver]
+
+  rule {
+    target_label = "host"
+    replacement   = "talos-cloud-01"
+  }
+}
+
+loki.write "central" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+prometheus.scrape "node" {
+  targets = [{
+    __address__ = "127.0.0.1:9100",
+  }]
+  forward_to = [prometheus.relabel.host_metrics.receiver]
+}
+
+prometheus.relabel "host_metrics" {
+  forward_to = [prometheus.remote_write.central.receiver]
+
+  rule {
+    target_label = "host"
+    replacement   = "talos-cloud-01"
+  }
+}
+
+prometheus.remote_write "central" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}

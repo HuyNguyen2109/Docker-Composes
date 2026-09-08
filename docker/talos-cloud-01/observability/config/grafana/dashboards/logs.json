@@ -1,0 +1,20 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"showTime": true, "showLabels": false},
+      "targets": [{"expr": "{host=~\".+\"}", "refId": "A"}],
+      "title": "All Logs",
+      "type": "logs"
+    }
+  ],
+  "schemaVersion": 39,
+  "title": "Homelab Logs",
+  "uid": "homelab-logs",
+  "version": 1
+}

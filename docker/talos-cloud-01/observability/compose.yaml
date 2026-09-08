@@ -1,0 +1,79 @@
+name: observability
+
+services:
+  loki:
+    image: grafana/loki:3.6.7
+    container_name: obs-loki
+    restart: unless-stopped
+    command:
+      - -config.file=/etc/loki/loki-config.yml
+      - -config.expand-env=true
+    env_file: .env
+    ports:
+      - "100.88.153.244:3100:3100"
+    volumes:
+      - ./config/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - /docker-volume/observability/loki:/loki
+    networks: [obs-net]
+
+  prometheus:
+    image: prom/prometheus:v3.11.2
+    container_name: obs-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=90d
+    ports:
+      - "100.88.153.244:9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - /docker-volume/observability/prometheus:/prometheus
+    networks: [obs-net]
+
+  grafana:
+    image: grafana/grafana:11.5.2
+    container_name: obs-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "100.88.153.244:3000:3000"
+    volumes:
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - /docker-volume/observability/grafana:/var/lib/grafana
+    networks: [obs-net]
+
+  alloy:
+    image: grafana/alloy:v1.16.1
+    container_name: obs-alloy
+    restart: unless-stopped
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - /etc/alloy/config.alloy
+    ports:
+      - "100.88.153.244:12345:12345"
+    volumes:
+      - ./config/alloy-local.alloy:/etc/alloy/config.alloy:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks: [obs-net]
+
+  node-exporter:
+    image: prom/node-exporter:v1.12.1
+    container_name: obs-node-exporter
+    restart: unless-stopped
+    pid: host
+    network_mode: host
+    volumes:
+      - /:/rootfs:ro,rslave
+    command:
+      - --path.rootfs=/rootfs
+
+networks:
+  obs-net:
+    driver: bridge
