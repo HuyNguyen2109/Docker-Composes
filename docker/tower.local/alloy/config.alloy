@@ -1,0 +1,57 @@
+logging {
+  level = "info"
+}
+
+discovery.docker "self" {
+  host = "unix:///var/run/docker.sock"
+}
+
+loki.source.docker "self" {
+  host     = "unix:///var/run/docker.sock"
+  targets  = discovery.docker.self.targets
+  forward_to = [loki.relabel.host.receiver]
+}
+
+loki.source.file "syslog" {
+  targets = [{
+    __path__ = "/var/log/syslog",
+  }]
+  forward_to = [loki.relabel.host.receiver]
+}
+
+loki.relabel "host" {
+  forward_to = [loki.write.central.receiver]
+
+  rule {
+    target_label = "host"
+    replacement   = "tower"
+  }
+}
+
+loki.write "central" {
+  endpoint {
+    url = "http://100.88.153.244:3100/loki/api/v1/push"
+  }
+}
+
+prometheus.scrape "node" {
+  targets = [{
+    __address__ = "192.168.1.40:9100",
+  }]
+  forward_to = [prometheus.relabel.host_metrics.receiver]
+}
+
+prometheus.relabel "host_metrics" {
+  forward_to = [prometheus.remote_write.central.receiver]
+
+  rule {
+    target_label = "host"
+    replacement   = "tower"
+  }
+}
+
+prometheus.remote_write "central" {
+  endpoint {
+    url = "http://100.88.153.244:9090/api/v1/write"
+  }
+}

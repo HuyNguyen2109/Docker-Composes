@@ -1,0 +1,32 @@
+name: alloy-tower
+
+services:
+  alloy:
+    image: grafana/alloy:v1.16.1
+    container_name: tower-alloy
+    restart: unless-stopped
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - /etc/alloy/config.alloy
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks: [obs-net]
+
+  node-exporter:
+    image: prom/node-exporter:v1.12.1
+    container_name: tower-node-exporter
+    restart: unless-stopped
+    pid: host
+    network_mode: host
+    volumes:
+      - /:/rootfs:ro
+    command:
+      - --path.rootfs=/rootfs
+
+networks:
+  obs-net:
+    external: true
