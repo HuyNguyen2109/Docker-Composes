@@ -70,6 +70,12 @@ alloy:
           target_label = "pod"
           action = "replace"
         }
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_node_name"]
+          target_label = "node"
+          action = "replace"
+        }
       }
       loki.source.kubernetes "pods" {
         targets    = discovery.relabel.pods.output
@@ -103,7 +109,7 @@ alloy:
         forward_to = [loki.process.process.receiver]
 
         rule {
-          source_labels = ["__meta_kubernetes_pod_node_name"]
+          source_labels = ["node"]
           target_label  = "host"
           action        = "replace"
         }
@@ -116,17 +122,26 @@ alloy:
       discovery.kubernetes "nodes" {
         role = "node"
       }
-      prometheus.scrape "nodes" {
-        targets    = discovery.kubernetes.nodes.targets
-        forward_to = [prometheus.relabel.node_host.receiver]
-      }
-      prometheus.relabel "node_host" {
-        forward_to = [prometheus.remote_write.central.receiver]
+      discovery.relabel "nodes" {
+        targets = discovery.kubernetes.nodes.targets
 
         rule {
           source_labels = ["__meta_kubernetes_node_name"]
           target_label  = "host"
           action        = "replace"
+        }
+
+        rule {
+          target_label = "__scheme__"
+          replacement  = "https"
+        }
+      }
+      prometheus.scrape "nodes" {
+        targets             = discovery.relabel.nodes.output
+        forward_to          = [prometheus.remote_write.central.receiver]
+        bearer_token_file   = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+        tls_config {
+          insecure_skip_verify = true
         }
       }
       prometheus.operator.servicemonitors "default" {
@@ -409,7 +424,10 @@ controller:
   nodeSelector: {}
 
   # -- Tolerations to apply to Grafana Alloy pods.
-  tolerations: []
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
 
   # -- Topology Spread Constraints to apply to Grafana Alloy pods.
   topologySpreadConstraints: []
