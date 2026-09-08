@@ -1320,7 +1320,7 @@ alertmanager:
 ## Using default values from https://github.com/grafana-community/helm-charts/blob/main/charts/grafana/values.yaml
 ##
 grafana:
-  enabled: true
+  enabled: false
   namespaceOverride: ""
   nodeSelector:
     node-role.kubernetes.io/storage: "true"
@@ -3539,7 +3539,7 @@ prometheusOperator:
 ## Deploy a Prometheus instance
 ##
 prometheus:
-  enabled: true
+  enabled: false
 
   ## Toggle prometheus into agent mode
   ## Note many of features described below (e.g. rules, query, alerting, remote read, thanos) will not work in agent mode.
