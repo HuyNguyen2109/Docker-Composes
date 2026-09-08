@@ -34,7 +34,11 @@ ssh -i <key> <user>@<host> "docker network create obs-net 2>/dev/null || true"
 | talos-cloud-00 (14.225.220.145) | root | `/root/ssh-keys/oracle` | `docker/talos-cloud-00/alloy` | `/docker-volume/alloy` | `alloy-talosc00` |
 
 > Note: talos-cloud-00 is managed via the Arcane API (its SSH is not reachable
-> from the homelab controller); the SSH fallback is listed for documentation.
+> from the homelab controller; the SSH fallback is listed for documentation).
+> On talos-cloud-00 the host runs UFW with a default DROP INPUT policy: allow
+> the obs-net bridge subnet to reach node-exporter once:
+> `ufw allow from 172.22.0.0/16 to any port 9100 proto tcp`.
+> Node metrics scrape target: `100.88.0.70:9100` (NetBird IP of the host).
 
 All agents push logs to central Loki (`http://100.88.153.244:3100`) and
 metrics to central Prometheus (`http://100.88.153.244:9090`) over the NetBird
