@@ -73,7 +73,7 @@ alloy:
       }
       loki.source.kubernetes "pods" {
         targets    = discovery.relabel.pods.output
-        forward_to = [loki.process.process.receiver]
+        forward_to = [loki.relabel.host.receiver]
       }
       loki.process "process" {
         forward_to = [loki.write.loki.receiver]
@@ -99,10 +99,42 @@ alloy:
           values = [ "service_name" ]
         }
       }
+      loki.relabel "host" {
+        forward_to = [loki.process.process.receiver]
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_node_name"]
+          target_label  = "host"
+          action        = "replace"
+        }
+      }
       loki.write "loki" {
         endpoint {
-          url       = "http://loki-gateway/loki/api/v1/push"
-          tenant_id = "1"
+          url = "http://100.88.153.244:3100/loki/api/v1/push"
+        }
+      }
+      discovery.kubernetes "nodes" {
+        role = "node"
+      }
+      prometheus.scrape "nodes" {
+        targets    = discovery.kubernetes.nodes.targets
+        forward_to = [prometheus.relabel.node_host.receiver]
+      }
+      prometheus.relabel "node_host" {
+        forward_to = [prometheus.remote_write.central.receiver]
+
+        rule {
+          source_labels = ["__meta_kubernetes_node_name"]
+          target_label  = "host"
+          action        = "replace"
+        }
+      }
+      prometheus.operator.servicemonitors "default" {
+        forward_to = [prometheus.remote_write.central.receiver]
+      }
+      prometheus.remote_write "central" {
+        endpoint {
+          url = "http://100.88.153.244:9090/api/v1/write"
         }
       }
 
@@ -355,7 +387,7 @@ controller:
   minReadySeconds: 10
 
   # -- Configures Pods to use the host network. When set to true, the ports that will be used must be specified.
-  hostNetwork: false
+  hostNetwork: true
 
   # -- Configures Pods to use the host PID namespace.
   hostPID: false
