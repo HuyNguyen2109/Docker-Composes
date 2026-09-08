@@ -390,7 +390,7 @@ alertmanager:
 
   ## Deploy alertmanager
   ##
-  enabled: true
+  enabled: false  # centralized observability: no in-cluster alerting (2026-09-08)
 
   # Optional: Override the namespace where Alertmanager will be deployed.
   namespaceOverride: ""
