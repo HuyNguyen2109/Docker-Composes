@@ -36,7 +36,7 @@ loki.write "central" {
 
 prometheus.scrape "node" {
   targets = [{
-    __address__ = "127.0.0.1:9100",
+    __address__ = "100.88.153.244:9100",
   }]
   forward_to = [prometheus.relabel.host_metrics.receiver]
 }
